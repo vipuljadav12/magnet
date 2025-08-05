@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 Route::group([ 'prefix'=>'admin/Eligibility','module' => 'Eligibility', 'middleware' => ['web','auth','super'], 'namespace' => 'App\Modules\Eligibility\Controllers'], function() {
 
     Route::get('/', 'EligibilityController@index');
