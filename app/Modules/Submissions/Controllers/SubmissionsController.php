@@ -1631,7 +1631,7 @@ class SubmissionsController extends Controller
     public function fetchProgramGrade($first_program_id = 0, $second_program_id = 0)
     {
         if ($first_program_id == 0 && $second_program_id == 0) {
-            $data = Submissions::select(DB::raw("DISTINCT(next_grade)"))->orderByDesc("next_grade")->where("district_id", Session::get("district_id"))->get();
+            $data = Submissions::select(DB::raw("DISTINCT(next_grade) as next_grade"))->orderByDesc("next_grade")->where("district_id", Session::get("district_id"))->get();
         } else {
             $data = Submissions::where(function ($q) use ($first_program_id, $second_program_id) {
                 if ($first_program_id == 0 && $second_program_id != 0) {
@@ -1641,12 +1641,12 @@ class SubmissionsController extends Controller
                 } else {
                     $q->where("second_choice_program_id", $second_program_id)->orWhere('first_choice_program_id', $first_program_id);
                 }
-            })->where("district_id", Session::get("district_id"))->select(DB::raw("DISTINCT(next_grade)"))->orderByDesc("next_grade")->get();
+            })->where("district_id", Session::get("district_id"))->select(DB::raw("DISTINCT(next_grade) as next_grade"))->orderByDesc("next_grade")->get();
         }
         if (!empty($data)) {
             return json_encode($data);
         } else {
-            $data = Submissions::select(DB::raw("DISTINCT(next_grade)"))->orderByDesc("next_grade")->where("district_id", Session::get("district_id"))->get();
+            $data = Submissions::select(DB::raw("DISTINCT(next_grade) as next_grade"))->orderByDesc("next_grade")->where("district_id", Session::get("district_id"))->get();
             return json_encode($data);
         }
     }

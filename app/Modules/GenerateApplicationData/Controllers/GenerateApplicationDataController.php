@@ -699,12 +699,6 @@ class GenerateApplicationDataController extends Controller
         $rs = Application::where("enrollment_id", Session::get("enrollment_id"))->select("id")->get()->toArray();
         $avail_program_ary = \App\Modules\Program\Models\ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->whereIn("eligibility_template.name", ["Recommendation Form", "Writing Prompt"])->where('program_eligibility.status', 'Y')->whereIn("program_eligibility.application_id", $rs)->pluck('program_id')->toArray();
 
-        $submissions = Submissions::where('submissions.district_id', Session::get('district_id'))
-            ->where(function ($q) use ($avail_program_ary) {
-                $q->whereIn('first_choice_program_id', $avail_program_ary);
-                $q->orWhereIn('second_choice_program_id', $avail_program_ary);
-            })->whereIn('submission_status', array('Active', 'Pending'))->where('enrollment_id', Session::get('enrollment_id'));
-
         $enrollment = Enrollment::where("district_id", Session::get('district_id'))->get();
 
         $programs = Program::where("district_id", Session::get('district_id'))
@@ -717,9 +711,22 @@ class GenerateApplicationDataController extends Controller
         $ids = array('"PreK"', '"K"', '"1"', '"2"', '"3"', '"4"', '"5"', '"6"', '"7"', '"8"', '"9"', '"10"', '"11"', '"12"');
         $ids_ordered = implode(',', $ids);
 
-        $grades = $submissions->orderByRaw('FIELD(submissions.next_grade,' . implode(",", $ids) . ')')->select(DB::raw("DISTINCT(next_grade)"))->get();
+        // Create separate query builders for each query
+        $grades_query = Submissions::where('submissions.district_id', Session::get('district_id'))
+            ->where(function ($q) use ($avail_program_ary) {
+                $q->whereIn('first_choice_program_id', $avail_program_ary);
+                $q->orWhereIn('second_choice_program_id', $avail_program_ary);
+            })->whereIn('submission_status', array('Active', 'Pending'))->where('enrollment_id', Session::get('enrollment_id'));
 
-        $submission_status = $submissions->orderBy('submission_status')->select(DB::raw("DISTINCT(submission_status)"))->get();
+        $submission_status_query = Submissions::where('submissions.district_id', Session::get('district_id'))
+            ->where(function ($q) use ($avail_program_ary) {
+                $q->whereIn('first_choice_program_id', $avail_program_ary);
+                $q->orWhereIn('second_choice_program_id', $avail_program_ary);
+            })->whereIn('submission_status', array('Active', 'Pending'))->where('enrollment_id', Session::get('enrollment_id'));
+
+        $grades = $grades_query->select(DB::raw("DISTINCT(next_grade) as next_grade"))->orderByRaw('FIELD(next_grade,' . implode(",", $ids) . ')')->get();
+
+        $submission_status = $submission_status_query->select(DB::raw("DISTINCT(submission_status) as submission_status"))->orderBy('submission_status')->get();
 
         return view("GenerateApplicationData::generated_form_index", compact('enrollment', 'programs', 'grades', 'submission_status'));
     }
