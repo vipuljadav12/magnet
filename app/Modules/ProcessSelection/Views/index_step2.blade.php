@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Process Selection | {{config('app.name', 'LeanFrogMagnet')}} @endsection
+@section('title')Process Selection | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
 @section('content')
 <form action="{{ url('admin/Process/Selection/store')}}" method="post" name="process_selection" id="process_selection">
     {{csrf_field()}}

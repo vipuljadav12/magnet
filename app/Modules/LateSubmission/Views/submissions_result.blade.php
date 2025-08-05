@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Submission Result | {{config('app.name', 'LeanFrogMagnet')}} @endsection
+@section('title')Submission Result | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
 @section('content')
 <style type="text/css">
     .buttons-excel{display: none !important;}

@@ -1,5 +1,5 @@
 <?php $__env->startSection("title"); ?>
-	Set Availability | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?>
+	Set Availability | <?php echo e(config('app.name', 'LeanFrogMagnet'))); ?>
 
 <?php $__env->stopSection(); ?>
 <?php $__env->startSection("content"); ?>

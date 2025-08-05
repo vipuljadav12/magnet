@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 @section('title')
-Edit Form | {{config('app.name', 'LeanFrogMagnet')}}
+Edit Form | {{config('app.name', 'LeanFrogMagnet'))}}
 @endsection
 @section('content')
 <link rel="stylesheet" href="{{url('/resources/assets/admin/css/jquery-ui.css')}}">

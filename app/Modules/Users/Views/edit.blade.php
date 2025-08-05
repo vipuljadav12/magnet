@@ -1,6 +1,6 @@
 @extends("layouts.admin.app")
 @section('title')
-	Edit Users | {{config('app.name', 'LeanFrogMagnet')}}
+	Edit Users | {{config('app.name', 'LeanFrogMagnet'))}}
 @endsection
 @section('content')
 <div class="card shadow">

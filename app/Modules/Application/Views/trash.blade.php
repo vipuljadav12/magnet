@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 @section('title')
-	Trash Application Dates | {{config('app.name', 'LeanFrogMagnet')}}
+	Trash Application Dates | {{config('app.name', 'LeanFrogMagnet'))}}
 @endsection
 
 @section('content')

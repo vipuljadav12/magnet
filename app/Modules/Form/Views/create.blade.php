@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 @section('title')
-Add Form | {{config('app.name', 'LeanFrogMagnet')}}
+Add Form | {{config('app.name', 'LeanFrogMagnet'))}}
 @endsection
 @section('content')
     <div class="card shadow">

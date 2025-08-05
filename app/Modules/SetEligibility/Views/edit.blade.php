@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Edit Eligibility Value  | {{config('app.name', 'LeanFrogMagnet')}}  @endsection
+@section('title')Edit Eligibility Value  | {{config('app.name', 'LeanFrogMagnet'))}}  @endsection
 @section('styles')
     <script type="text/javascript">var BASE_URL = '{{url('/')}}';</script>
     <style>

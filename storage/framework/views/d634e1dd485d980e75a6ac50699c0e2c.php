@@ -1,5 +1,5 @@
 
-<?php $__env->startSection('title'); ?>Edit Eligibility Value  | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?>  <?php $__env->stopSection(); ?>
+<?php $__env->startSection('title'); ?>Edit Eligibility Value  | <?php echo e(config('app.name', 'LeanFrogMagnet'))); ?>  <?php $__env->stopSection(); ?>
 <?php $__env->startSection('styles'); ?>
     <script type="text/javascript">var BASE_URL = '<?php echo e(url('/')); ?>';</script>
     <style>

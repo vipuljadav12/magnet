@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 @section('title')
-	Set Eligibility Value | {{config('app.name', 'LeanFrogMagnet')}}  
+	Set Eligibility Value | {{config('app.name', 'LeanFrogMagnet'))}}  
 @endsection
 @section('content')
     <div class="card shadow">

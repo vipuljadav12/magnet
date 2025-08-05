@@ -1,5 +1,5 @@
 <?php $__env->startSection('title'); ?>
-	Set Eligibility Value | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?>  
+	Set Eligibility Value | <?php echo e(config('app.name', 'LeanFrogMagnet'))); ?>  
 <?php $__env->stopSection(); ?>
 <?php $__env->startSection('content'); ?>
     <div class="card shadow">

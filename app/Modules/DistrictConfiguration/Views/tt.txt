@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title') District Configuration | {{config('app.name', 'LeanFrogMagnet')}} @endsection
+@section('title') District Configuration | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
 @section('styles')
 <style type="text/css">
     .error {

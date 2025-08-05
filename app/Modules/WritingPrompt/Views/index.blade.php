@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')WritingPrompt | {{config('app.name', 'LeanFrogMagnet')}} @endsection
+@section('title')WritingPrompt | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
 @section('styles')
 <style type="text/css">
     .error { color: red; }

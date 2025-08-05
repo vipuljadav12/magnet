@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Edit Communication | {{config('app.name', 'LeanFrogMagnet')}} @endsection
+@section('title')Edit Communication | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
 @section('styles')
     
 @endsection
