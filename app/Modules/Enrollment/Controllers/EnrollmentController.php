@@ -29,7 +29,6 @@ class EnrollmentController extends Controller
     use AuditTrail;
     public function index()
     {
-        // dd(Session::get('enrollment_id'));
         if (Session('district_id') == 0) {
             $enrollments = Enrollment::where('status', '!=', 'T')
                 ->get();
