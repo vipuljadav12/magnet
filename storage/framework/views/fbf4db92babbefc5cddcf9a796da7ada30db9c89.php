@@ -1,1 +1,0 @@
-<?php echo $data->email_body; ?>

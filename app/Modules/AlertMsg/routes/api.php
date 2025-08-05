@@ -1,7 +1,7 @@
 <?php
 
-Route::group(['module' => 'Configuration', 'middleware' => ['api'], 'namespace' => 'App\Modules\Configuration\Controllers'], function() {
+use Illuminate\Support\Facades\Route;
 
-    Route::resource('Configuration', 'ConfigurationController');
-
+Route::group(['module' => 'AlertMsg', 'middleware' => ['api'], 'namespace' => 'App\Modules\AlertMsg\Controllers'], function() {
+    Route::resource('AlertMsg', 'AlertMsgController');
 });

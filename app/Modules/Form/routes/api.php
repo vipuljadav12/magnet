@@ -1,7 +1,9 @@
 <?php
 
-Route::group(['module' => 'From', 'middleware' => ['api'], 'namespace' => 'App\Modules\From\Controllers'], function() {
+use Illuminate\Support\Facades\Route;
 
-    Route::resource('From', 'FromController');
+Route::group(['module' => 'Form', 'middleware' => ['api'], 'namespace' => 'App\Modules\Form\Controllers'], function() {
+
+    Route::resource('Form', 'FormController');
 
 });

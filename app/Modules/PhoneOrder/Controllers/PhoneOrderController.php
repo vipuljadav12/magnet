@@ -15,7 +15,7 @@ class PhoneOrderController extends Controller
      */
     public function index()
     {
-        return view("PhoneOrder::admin.index");        
+        return view("PhoneOrder::admin.index");
     }
 
     /**
@@ -23,9 +23,7 @@ class PhoneOrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
-    {
-    }
+    public function create() {}
 
     /**
      * Store a newly created resource in storage.

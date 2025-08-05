@@ -17,6 +17,17 @@ $app = new Illuminate\Foundation\Application(
 
 /*
 |--------------------------------------------------------------------------
+| Load Helper Functions
+|--------------------------------------------------------------------------
+|
+| Load custom helper functions that are used throughout the application.
+|
+*/
+
+require_once __DIR__.'/../config/helper.php';
+
+/*
+|--------------------------------------------------------------------------
 | Bind Important Interfaces
 |--------------------------------------------------------------------------
 |

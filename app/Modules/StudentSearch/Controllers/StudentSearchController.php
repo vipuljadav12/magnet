@@ -52,5 +52,5 @@ class StudentSearchController extends Controller
         $id = $request->id;
         $update = Student::where('stateID', $id)->update($data);
         return $update ? 'true' : 'false';
-    }        
+    }
 }

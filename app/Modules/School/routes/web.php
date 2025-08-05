@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 Route::group(['prefix'=>'admin/School','module' => 'School', 'middleware' => ['web','auth','super'], 'namespace' => 'App\Modules\School\Controllers'], function() {
 	
     		Route::get('/', 'SchoolController@index');

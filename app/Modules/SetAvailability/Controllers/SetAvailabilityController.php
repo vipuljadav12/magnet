@@ -8,13 +8,13 @@ use App\Modules\Program\Models\Program;
 use App\Modules\SetAvailability\Models\Availability;
 use App\Modules\Enrollment\Models\Enrollment;
 use App\Modules\Submissions\Models\SubmissionsStatusUniqueLog;
-use Session;
-
 use App\Modules\SetAvailability\Excel\AvailabilityImport;
 use App\Modules\SetAvailability\Excel\ImportErrorExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 use App\Modules\ProcessSelection\Models\ProcessSelection;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
 
 class SetAvailabilityController extends Controller
 {
@@ -26,24 +26,20 @@ class SetAvailabilityController extends Controller
      */
     public function index()
     {
-        $enrollment = Enrollment::where('status','Y')->where("id", Session::get('enrollment_id'))->first();
+        $enrollment = Enrollment::where('status', 'Y')->where("id", Session::get('enrollment_id'))->first();
         $af = ['applicant_filter1', 'applicant_filter2', 'applicant_filter3'];
-        if(Session::get("district_id") != '0'){
-            $programs=Program::where('status','!=','T')->where('district_id', Session::get('district_id'))->where('enrollment_id', Session::get('enrollment_id'))->get();
-        }
-        else
-            $programs=Program::where('status','!=','T')->where('enrollment_id', Session::get('enrollment_id'))->get();
+        if (Session::get("district_id") != '0') {
+            $programs = Program::where('status', '!=', 'T')->where('district_id', Session::get('district_id'))->where('enrollment_id', Session::get('enrollment_id'))->get();
+        } else
+            $programs = Program::where('status', '!=', 'T')->where('enrollment_id', Session::get('enrollment_id'))->get();
 
         // Application Filters
         $af_programs = [];
         if (!empty($programs)) {
             foreach ($programs as $key => $program) {
-                if($program->applicant_filter1 == '' && $program->applicant_filter1 == '' && $program->applicant_filter3 == '' )
-                {
+                if ($program->applicant_filter1 == '' && $program->applicant_filter1 == '' && $program->applicant_filter3 == '') {
                     array_push($af_programs, $program->name);
-                }
-                else
-                {
+                } else {
                     foreach ($af as $key => $af_field) {
                         if (($program->$af_field != '') && !in_array($program->$af_field, $af_programs)) {
                             array_push($af_programs, $program->$af_field);
@@ -55,7 +51,7 @@ class SetAvailabilityController extends Controller
         // return $af_programs;
 
         // return $programs;
-        return view("SetAvailability::index",compact("af_programs", "enrollment"));
+        return view("SetAvailability::index", compact("af_programs", "enrollment"));
         // return view("SetAvailability::index",compact("programs", "af_programs"));
     }
 
@@ -68,15 +64,15 @@ class SetAvailabilityController extends Controller
     {
         // $display_outcome = SubmissionsStatusUniqueLog::count();
         //Code to fetch data from process selection by program form id
-        $display_outcome = ProcessSelection::where('enrollment_id',Session::get("enrollment_id"))->where('form_id',$program->parent_submission_form)->where('commited','Yes')->count();
+        $display_outcome = ProcessSelection::where('enrollment_id', Session::get("enrollment_id"))->where('form_id', $program->parent_submission_form)->where('commited', 'Yes')->count();
         // $display_outcome = SubmissionsStatusUniqueLog::join("submissions", "submissions.id", "submissions_status_unique_log.submission_id")->where("submissions.enrollment_id", Session::get("enrollment_id"))->count();
 
-        $availabilities =  Availability::where("program_id",$program->id)->where('district_id',$program->district_id)->get()->keyBy('grade');
-        $enrollment = Enrollment::where('status','Y')->where("district_id",$program->district_id)
-                ->get()->last();
+        $availabilities =  Availability::where("program_id", $program->id)->where('district_id', $program->district_id)->get()->keyBy('grade');
+        $enrollment = Enrollment::where('status', 'Y')->where("district_id", $program->district_id)
+            ->get()->last();
         // return $availabilities;
-        return view("SetAvailability::options",compact("program","availabilities","enrollment","display_outcome"));
-    }   
+        return view("SetAvailability::options", compact("program", "availabilities", "enrollment", "display_outcome"));
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -86,11 +82,9 @@ class SetAvailabilityController extends Controller
      */
     public function store(Request $request)
     {
-        if(isset($request['grades']) && !empty($request['grades']))
-        {
-            foreach($request['grades'] as $g => $grade) 
-            {   
-                if(isset($request["grades"][$g]['total_seats'])){ 
+        if (isset($request['grades']) && !empty($request['grades'])) {
+            foreach ($request['grades'] as $g => $grade) {
+                if (isset($request["grades"][$g]['total_seats'])) {
                     $ins = array();
                     $ins['program_id'] = $request['program_id'];
                     $ins['grade'] = $g;
@@ -103,18 +97,15 @@ class SetAvailabilityController extends Controller
                     $ins['year'] = $request["year"];
                     $ins['enrollment_id'] = Session::get("enrollment_id");
                     // $newData[] = $ins;
-                    $exist = Availability::where("program_id",$ins['program_id'])->where('district_id',$ins['district_id'])->where("grade",$ins['grade'])->where("enrollment_id",Session::get('enrollment_id'))->first();
-                    if(isset($exist->id))
-                    {
+                    $exist = Availability::where("program_id", $ins['program_id'])->where('district_id', $ins['district_id'])->where("grade", $ins['grade'])->where("enrollment_id", Session::get('enrollment_id'))->first();
+                    if (isset($exist->id)) {
                         $exist->available_seats = $ins['available_seats'];
                         $exist->black_seats = $ins['black_seats'];
                         $exist->white_seats = $ins['white_seats'];
                         $exist->other_seats = $ins['other_seats'];
                         $exist->total_seats = $ins['total_seats'];
                         $result[] = $exist->save();
-                    }
-                    else
-                    {
+                    } else {
                         $result[] = Availability::create($ins);
                     }
                 }
@@ -122,74 +113,69 @@ class SetAvailabilityController extends Controller
             //exit;
         }
 
-        if(isset($result) && count($result) > 0)
-        {
-            Session::flash("success","Availability saved successfully");
-        }
-        else
-        {
-            Session::flash("warning","Something went wrong, Please try again.");
+        if (isset($result) && count($result) > 0) {
+            Session::flash("success", "Availability saved successfully");
+        } else {
+            Session::flash("warning", "Something went wrong, Please try again.");
         }
         return redirect('admin/Availability');
         // return $newData;
 
     }
 
-    
+
     public function getPrograms(Request $request)
     {
         $af = [
-            'application_filter_1' => 'applicant_filter1', 
-            'application_filter_2' => 'applicant_filter2', 
+            'application_filter_1' => 'applicant_filter1',
+            'application_filter_2' => 'applicant_filter2',
             'application_filter_3' => 'applicant_filter3'
-        ]; 
+        ];
         $seat_type = [
-            'black_seats' => 'Black', 
+            'black_seats' => 'Black',
             'white_seats' => 'White',
             'other_seats' => 'Other'
         ];
 
         $req_filter = $request->application_filter;
-        $programs = Program::where("enrollment_id", Session::get("enrollment_id"))->where('status','!=','T');
-        if(Session::get("district_id") != '0'){
+        $programs = Program::where("enrollment_id", Session::get("enrollment_id"))->where('status', '!=', 'T');
+        if (Session::get("district_id") != '0') {
             $programs = $programs->where('district_id', Session::get('district_id'));
         }
-        if(Session::get("enrollment_id") != '0'){
+        if (Session::get("enrollment_id") != '0') {
             $programs = $programs->where('enrollment_id', Session::get('enrollment_id'));
         }
 
         if ($req_filter == '') {
             // return all programs
-            $data = [ 'data' => $programs->get() ];
+            $data = ['data' => $programs->get()];
         } else {
-            $programs = $programs->where(function($q) use ($req_filter) {
+            $programs = $programs->where(function ($q) use ($req_filter) {
                 $q->where('applicant_filter1', $req_filter);
                 $q->orWhere('applicant_filter2', $req_filter);
                 $q->orWhere('applicant_filter3', $req_filter);
                 $q->orWhere('name', $req_filter);
             })->get();
-            
+
             // Filter by application filter
             $filtered_programs = [];
             $avg_data = [];
             if (!empty($programs)) {
                 $programs_avg = [];
                 foreach ($programs as $key => $program) {
-                    if($program->selection_by == "Program Name")
+                    if ($program->selection_by == "Program Name")
                         $selection_by = "name";
                     else
                         $selection_by = strtolower(str_replace(' ', '_', $program->selection_by));
 
-                    if($selection_by == "name" && $program->{$selection_by} == $req_filter)
-                    {
+                    if ($selection_by == "name" && $program->{$selection_by} == $req_filter) {
                         $filtered_programs[] = $program;
                         array_push($programs_avg, $program->id);
-                    }
-                    elseif (
+                    } elseif (
                         isset($af[$selection_by]) &&
-                        ($program->{$af[$selection_by]} != '') && 
-                        $program->{$af[$selection_by]} == $req_filter) 
-                    {
+                        ($program->{$af[$selection_by]} != '') &&
+                        $program->{$af[$selection_by]} == $req_filter
+                    ) {
                         $filtered_programs[] = $program;
                         array_push($programs_avg, $program->id);
                     }
@@ -198,7 +184,7 @@ class SetAvailabilityController extends Controller
                 // avg availability
                 if (!empty($programs_avg)) {
                     $total = 0;
-                    $availabilities =  Availability::whereIn("program_id",$programs_avg)->where('district_id',Session('district_id'))->get(array_keys($seat_type));
+                    $availabilities =  Availability::whereIn("program_id", $programs_avg)->where('district_id', Session('district_id'))->get(array_keys($seat_type));
 
                     foreach ($seat_type as $stype => $svalue) {
                         $sum = $availabilities->sum($stype);
@@ -216,21 +202,23 @@ class SetAvailabilityController extends Controller
         return json_encode($data);
     }
 
-    public function import() {
+    public function import()
+    {
         return view('SetAvailability::import');
     }
 
-    public function importTemplate() {
+    public function importTemplate()
+    {
         $district_id = Session::get('district_id');
         // $school_data = School::select('school.id','school.name')->where('status','!=','T')->where('district_id',$district_id)->get();
         $program_data = [];
-        $programs = Program::where('status','!=','T')->where('district_id', $district_id)->where('enrollment_id', Session::get('enrollment_id'))->get();
+        $programs = Program::where('status', '!=', 'T')->where('district_id', $district_id)->where('enrollment_id', Session::get('enrollment_id'))->get();
 
-        foreach($programs as $key => $value){
+        foreach ($programs as $key => $value) {
             $grade_arr = explode(',', $value->grade_lavel);
 
-            if(isset($grade_arr) && !empty($grade_arr)){
-                foreach($grade_arr as $g_key => $g_value){
+            if (isset($grade_arr) && !empty($grade_arr)) {
+                foreach ($grade_arr as $g_key => $g_value) {
                     $tmp = [];
                     $tmp['program_id'] = $value->id;
                     $tmp['program_name'] = $value->name;
@@ -241,11 +229,12 @@ class SetAvailabilityController extends Controller
             }
         }
         // return $program_data;
-        return Excel::download(new ImportErrorExport(collect(['data'=>collect($program_data)])),'Availability_Import_Template.xlsx');
+        return Excel::download(new ImportErrorExport(collect(['data' => collect($program_data)])), 'Availability_Import_Template.xlsx');
     }
 
-    public function storeImport(Request $request) {
-        \Validator::extend('validate_file', function ($attribute, $value, $parameters, $validator) use ($request) {
+    public function storeImport(Request $request)
+    {
+        Validator::extend('validate_file', function ($attribute, $value, $parameters, $validator) use ($request) {
             return in_array($request->file($attribute)->getClientOriginalExtension(), $parameters);
         });
         $max_mb = 10; // max file limit
@@ -254,7 +243,7 @@ class SetAvailabilityController extends Controller
             'file' =>  [
                 'required',
                 'validate_file:xlsx,xls',
-                'max:'.$max_limit
+                'max:' . $max_limit
             ]
         ];
         $messages = [
@@ -265,12 +254,11 @@ class SetAvailabilityController extends Controller
         $this->validate($request, $rules, $messages);
         $import = new AvailabilityImport();
         $import->import(request()->file('file'));
-        if(!empty($import->errors())){
+        if (!empty($import->errors())) {
             $data['data'] = collect($import->errors());
-            return Excel::download(new ImportErrorExport($data),'Availability_Import_Error.xlsx');
+            return Excel::download(new ImportErrorExport($data), 'Availability_Import_Error.xlsx');
         }
-        \Session::flash('success', 'Data imported successfully.');
+        Session::flash('success', 'Data imported successfully.');
         return redirect('admin/Availability/import');
     }
-
 }

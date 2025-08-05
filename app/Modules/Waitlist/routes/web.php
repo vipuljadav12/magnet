@@ -1,4 +1,7 @@
 <?php
+
+use Illuminate\Support\Facades\Route;
+
 Route::group(['prefix' => 'admin/Waitlist','module' => 'Waitlist', 'middleware' => ['web','auth'], 'namespace' => 'App\Modules\Waitlist\Controllers'], function() {
 
     Route::post("/Program/Swing/{application_id}/store", 'WaitlistController@saveSwingData');

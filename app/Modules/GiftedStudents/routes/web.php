@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 Route::group(['prefix'=>'admin/GiftedStudents','module' => 'GiftedStudents', 'middleware' => ['web','auth'], 'namespace' => 'App\Modules\GiftedStudents\Controllers'], function() {
 
     Route::get('/','GiftedStudentsController@index');

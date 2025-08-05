@@ -55,6 +55,12 @@ $response = $kernel->handle(
     $request = Illuminate\Http\Request::capture()
 );
 
-$response->send();
+// Handle different response types in Laravel 12
+if (method_exists($response, 'send')) {
+    $response->send();
+} else {
+    // For View responses or other types that don't have send()
+    echo $response;
+}
 
 $kernel->terminate($request, $response);

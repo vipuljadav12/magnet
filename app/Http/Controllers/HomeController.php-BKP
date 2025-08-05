@@ -29,11 +29,6 @@ use App\IncorrectStudentBDay;
 use App\StudentData;
 use Response;
 
-
-
-
-
-
 class HomeController extends Controller
 {
     use AuditTrail;

@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 Route::group(['prefix'=>'admin/WritingPrompt','module' => 'WritingPrompt', 'middleware' => ['web','auth'], 'namespace' => 'App\Modules\WritingPrompt\Controllers'], function() {
 
     Route::get('/','WritingPromptController@index');

@@ -10,23 +10,22 @@ use App\Modules\School\Models\Grade;
 use App\Modules\Application\Models\Application;
 use App\Modules\Enrollment\Models\Enrollment;
 use App\Modules\Program\Models\Program;
-use App\Modules\Submissions\Models\{Submissions,SubmissionGrade,SubmissionConductDisciplinaryInfo,SubmissionsWaitlistFinalStatus,SubmissionsFinalStatus};
+use App\Modules\Submissions\Models\{Submissions, SubmissionGrade, SubmissionConductDisciplinaryInfo, SubmissionsWaitlistFinalStatus, SubmissionsFinalStatus};
 use App\Modules\GenerateApplicationData\Models\GenerateApplicationDataGenerated;
 use App\Modules\GenerateApplicationData\Models\GenerateContractDataGenerated;
 use App\Modules\Eligibility\Models\SubjectManagement;
-use Config;
-use Session;
-use DB;
-use Validator;  
-use PDF;
-use Response;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Session;
 
 class GenerateApplicationDataController extends Controller
 {
 
-	public function index()
-	{
-       /* set_time_limit(0);
+    public function index()
+    {
+        /* set_time_limit(0);
         $rsData = DB::select("select * from student_session_sunday LIMIT 25000 OFFSET 175000");
 
         foreach($rsData as $key=>$value)
@@ -65,166 +64,98 @@ class GenerateApplicationDataController extends Controller
             }
         }
         echo "done";exit;*/
-		$enrollment = Enrollment::where("district_id", Session::get('district_id'))->get();
-		$programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status','Y')->orderBy('name')->get();
-		$grades = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('next_grade')->select(DB::raw("DISTINCT(next_grade)"))->get();
+        $enrollment = Enrollment::where("district_id", Session::get('district_id'))->get();
+        $programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status', 'Y')->orderBy('name')->get();
+        $grades = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('next_grade')->select(DB::raw("DISTINCT(next_grade)"))->get();
         $submission_status = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('submission_status')->select(DB::raw("DISTINCT(submission_status)"))->get();
 
 
-		return view("GenerateApplicationData::index", compact('enrollment','programs','grades', 'submission_status'));
-	}
+        return view("GenerateApplicationData::index", compact('enrollment', 'programs', 'grades', 'submission_status'));
+    }
 
     public function pdfview()
     {
         $items = DB::table("submissions")->get();
-        view()->share('items',$items);
+        view()->share('items', $items);
 
-        $pdf = PDF::loadView('GenerateApplicationData::pdfview',['items']);
+        $pdf = Pdf::loadView('GenerateApplicationData::pdfview', ['items']);
         return $pdf->download('pdfview.pdf');
     }
 
     public function generateData(Request $request)
     {
-    	//return $request;
-    	$first_program_id = $request['first_program'];
+        //return $request;
+        $first_program_id = $request['first_program'];
         $second_program_id = $request['second_program'];
-    	$enrollment_id = $request['enrollment'];
-    	$grade = $request['grade'];
-    	$status = $request['status'];
+        $enrollment_id = $request['enrollment'];
+        $grade = $request['grade'];
+        $status = $request['status'];
         $application_data = Application::where('district_id', Session::get('district_id'))->where("enrollment_id", Session::get("enrollment_id"))->where("status", "Y")->first();
 
 
-    	$data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id","submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
+        $data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id", "submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
 
-        if($request['awarded_program'] != '' && $request['awarded_program'] != "All" && $request['awarded_program'] != "0")
-        {
+        if ($request['awarded_program'] != '' && $request['awarded_program'] != "All" && $request['awarded_program'] != "0") {
             $data->where('awarded_school', $request['awarded_program']);
-        }
-        else
-        {
-        	if($first_program_id != 'All' && $first_program_id != '0' && $first_program_id != '')
-            {
-                $data->where(function($q) use ($first_program_id) {
+        } else {
+            if ($first_program_id != 'All' && $first_program_id != '0' && $first_program_id != '') {
+                $data->where(function ($q) use ($first_program_id) {
                     $q->where("first_choice_program_id", $first_program_id);
-                    });
+                });
             }
             //echo $second_program_id;exit;
-            if($second_program_id != 'All' && $second_program_id != '' && $second_program_id != '0')
-            {
-                $data->where(function($q) use ($second_program_id) {
+            if ($second_program_id != 'All' && $second_program_id != '' && $second_program_id != '0') {
+                $data->where(function ($q) use ($second_program_id) {
                     $q->where("second_choice_program_id", $second_program_id);
-                    });
+                });
             }
         }
-       /* elseif($second_program_id == '0')
+        /* elseif($second_program_id == '0')
         {
             $data->where(function($q) use ($second_program_id) {
                 $q->where("second_choice_program_id", '<>', '')->where("second_choice_program_id", '<>', '0');
                 });
         }*/
 
-    	if($grade != 'All')
-    	{
-    		$data->where('next_grade', $grade);
-    	}
-    	if($status != 'All')
-    	{
-    		$data->where('submission_status', $status);
-    	}
-    	$final_data = $data->get();
+        if ($grade != 'All') {
+            $data->where('next_grade', $grade);
+        }
+        if ($status != 'All') {
+            $data->where('submission_status', $status);
+        }
+        $final_data = $data->get();
 
-    	$subjects = $terms = array();
+        $subjects = $terms = array();
 
-    	$eligibilityArr = $programArr =  array();
+        $eligibilityArr = $programArr =  array();
         $agc_method = "";
-    	foreach($final_data as $key=>$value)
-    	{
-	        if($value->first_choice != "" && !in_array($value->first_choice, $programArr))
-            {
-            	$programArr[] = $value->first_choice;
+        foreach ($final_data as $key => $value) {
+            if ($value->first_choice != "" && !in_array($value->first_choice, $programArr)) {
+                $programArr[] = $value->first_choice;
                 $eligibilityData = getEligibilitiesDynamic($value->first_choice, 'Academic Grade Calculation');
-                if(count($eligibilityData) > 0)
-                {
+                if (count($eligibilityData) > 0) {
                     $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
-                    if(!empty($content))
-                    {
-                        if(isset($content->scoring->type))
+                    if (!empty($content)) {
+                        if (isset($content->scoring->type))
                             $agc_method = $content->scoring->type;
                     }
                 }
                 // $eligibilityData = getEligibilities($value->first_choice, 'Academic Grade Calculation');
                 $eligibilityData = getEligibilitiesDynamic($value->first_choice, 'Academic Grades');
-                if(count($eligibilityData) > 0)
-                {
-                    if(!in_array($eligibilityData[0]->id, $eligibilityArr))
-                    {
+                if (count($eligibilityData) > 0) {
+                    if (!in_array($eligibilityData[0]->id, $eligibilityArr)) {
                         $eligibilityArr[] = $eligibilityData[0]->assigned_eigibility_name;
-                       // echo $eligibilityData[0]->id;exit;
+                        // echo $eligibilityData[0]->id;exit;
                         $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
 
-                        if(!empty($content))
-                        {
+                        if (!empty($content)) {
                             // if($content->scoring->type=="DD")
                             // {
-                                $tmp = array();
-                                
-                                foreach($content->subjects as $svalue)
-                                {
-                                    if(!in_array($svalue, $subjects))
-                                    {
-                                        $subjects[] = $svalue;
-                                    }
-                                }
-
-                                // foreach($content->terms_calc as $tvalue)
-                                // {
-                                //     if(!in_array($tvalue, $terms))
-                                //     {
-                                //         $terms[] = $tvalue;
-                                //     }
-                                // }
-                                if(isset($content->terms_calc))
-                                {
-                                    foreach ($content->terms_calc as $tkey => $tvalue) {
-                                        if(! \Illuminate\Support\Arr::exists($terms, $tkey)){
-                                            $terms[$tkey] = $tvalue;
-                                        }
-                                    }
-                                }
-                            // }
-                        }                        
-                    }
-
-                }
-            }
-	        if($value->second_choice != "" && !in_array($value->second_choice, $programArr))
-	        {
-                $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grade Calculation');
-                if(count($eligibilityData) > 0)
-                {
-                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
-                    if(!empty($content))
-                    {
-                        if(isset($content->scoring->type))
-                            $agc_method = $content->scoring->type;
-                    }
-                }
-                // $eligibilityData = getEligibilities($value->second_choice, 'Academic Grade Calculation');
-	            $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grades');
-                if(count($eligibilityData) > 0)
-                {
-                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
-                    if(!empty($content))
-                    {
-                        // if($content->scoring->type=="DD")
-                        // {
                             $tmp = array();
-                            
-                            foreach($content->subjects as $svalue)
-                            {
-                                if(!in_array($svalue, $subjects))
-                                {
-                                    $subjects[] = $value;
+
+                            foreach ($content->subjects as $svalue) {
+                                if (!in_array($svalue, $subjects)) {
+                                    $subjects[] = $svalue;
                                 }
                             }
 
@@ -235,31 +166,72 @@ class GenerateApplicationDataController extends Controller
                             //         $terms[] = $tvalue;
                             //     }
                             // }
-                            if(isset($content->terms_calc))
-                            {
+                            if (isset($content->terms_calc)) {
                                 foreach ($content->terms_calc as $tkey => $tvalue) {
-                                    if(! \Illuminate\Support\Arr::exists($terms, $tkey)){
+                                    if (! \Illuminate\Support\Arr::exists($terms, $tkey)) {
                                         $terms[$tkey] = $tvalue;
                                     }
                                 }
                             }
+                            // }
+                        }
+                    }
+                }
+            }
+            if ($value->second_choice != "" && !in_array($value->second_choice, $programArr)) {
+                $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grade Calculation');
+                if (count($eligibilityData) > 0) {
+                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
+                    if (!empty($content)) {
+                        if (isset($content->scoring->type))
+                            $agc_method = $content->scoring->type;
+                    }
+                }
+                // $eligibilityData = getEligibilities($value->second_choice, 'Academic Grade Calculation');
+                $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grades');
+                if (count($eligibilityData) > 0) {
+                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
+                    if (!empty($content)) {
+                        // if($content->scoring->type=="DD")
+                        // {
+                        $tmp = array();
+
+                        foreach ($content->subjects as $svalue) {
+                            if (!in_array($svalue, $subjects)) {
+                                $subjects[] = $value;
+                            }
+                        }
+
+                        // foreach($content->terms_calc as $tvalue)
+                        // {
+                        //     if(!in_array($tvalue, $terms))
+                        //     {
+                        //         $terms[] = $tvalue;
+                        //     }
+                        // }
+                        if (isset($content->terms_calc)) {
+                            foreach ($content->terms_calc as $tkey => $tvalue) {
+                                if (! \Illuminate\Support\Arr::exists($terms, $tkey)) {
+                                    $terms[$tkey] = $tvalue;
+                                }
+                            }
+                        }
                         // }
                     }
                 }
-	        }
-    	} // grade ends
-        
+            }
+        } // grade ends
+
 
         // $subjects = array("eng", "math", "sci", "ss");
         //$terms = array("Q4.4 Final Grade"); 
 
-    	$student_data = array();
+        $student_data = array();
 
         //$count = 0;
-        
-		foreach($final_data as $key=>$value)
-        {
-            
+
+        foreach ($final_data as $key => $value) {
+
             $score = $this->collectionStudentGrade($value->id, $subjects, $terms, $value->next_grade);
             /*$cdi_data = DB::table("submission_conduct_discplinary_info")->where("submission_id", $value->id)->first();
             if(!empty($cdi_data))
@@ -282,43 +254,36 @@ class GenerateApplicationDataController extends Controller
             $tmp['id'] = $value->id;
             $tmp['student_id'] = $value->student_id;
             $tmp['confirmation_no'] = $value->confirmation_no;
-            $tmp['name'] = $value->first_name." ".$value->last_name;
+            $tmp['name'] = $value->first_name . " " . $value->last_name;
             $tmp['score'] = $score;
 
             $avgSum = $avgCnt = 0;
             $ywa = [];
-            foreach($score as $sk=>$sv)
-            {
+            foreach ($score as $sk => $sv) {
                 $ywa[$sv['academic_year']][] = $sv['grade'];
                 $avgSum += $sv['grade'];
-                $avgCnt ++;
+                $avgCnt++;
             }
             $tmp['agc_method'] = $agc_method;
-            if($agc_method == "YWA")
-            {
-                
+            if ($agc_method == "YWA") {
+
                 $tmp_ywa = [];
-                foreach($ywa as $yk=>$yv)
-                {
+                foreach ($ywa as $yk => $yv) {
                     $sum = 0;
-                    foreach($yv as $yvk=>$yvv)
-                    {
+                    foreach ($yv as $yvk => $yvv) {
                         $sum += $yvv;
                     }
-                    if($sum > 0)
-                        $tmp_ywa[$yk] = number_format($sum/count($yv), 2);
+                    if ($sum > 0)
+                        $tmp_ywa[$yk] = number_format($sum / count($yv), 2);
                 }
                 $tmp['ywa'] = $tmp_ywa;
             }
 
-            if($avgCnt > 0)
-            {
-                $tmp['avgGrade'] = number_format($avgSum/$avgCnt, 2);
-            }
-            else
-            {
+            if ($avgCnt > 0) {
+                $tmp['avgGrade'] = number_format($avgSum / $avgCnt, 2);
+            } else {
                 $tmp['avgGrade'] = 0;
-            }            
+            }
             //$tmp['cdi'] = $cdiArr;
             $tmp['grade'] = $value->next_grade;
             $tmp['current_school'] = $value->current_school;
@@ -329,19 +294,17 @@ class GenerateApplicationDataController extends Controller
             $tmp['birth_date'] = $value->birthday;
 
             $student_data[] = $tmp;
-
-
         }
 
-        view()->share('student_data',$student_data);
-        view()->share('subjects',$subjects);
-        view()->share('terms',$terms);
+        view()->share('student_data', $student_data);
+        view()->share('subjects', $subjects);
+        view()->share('terms', $terms);
         view()->share("application_data", $application_data);
 
-        $pdf = PDF::loadView('GenerateApplicationData::pdfview',['student_data','terms', 'subjects','application_data']);
+        $pdf = PDF::loadView('GenerateApplicationData::pdfview', ['student_data', 'terms', 'subjects', 'application_data']);
 
         $path = "resources/assets/admin/application_data";
-        $fileName =  "ApplicationData-".strtotime(date("Y-m-d H:i:s")) . '.' . 'pdf' ;
+        $fileName =  "ApplicationData-" . strtotime(date("Y-m-d H:i:s")) . '.' . 'pdf';
         $pdf->save($path . '/' . $fileName);
 
         $insert = array();
@@ -356,15 +319,14 @@ class GenerateApplicationDataController extends Controller
 
 
         return $pdf->download($fileName);
-          	
     }
 
-    
 
-    public function collectionStudentGrade($submission_id, $subjects, $terms, $next_grade=0)
+
+    public function collectionStudentGrade($submission_id, $subjects, $terms, $next_grade = 0)
     {
         $gradeInfo = SubjectManagement::where("grade", $next_grade)->first();
-       
+
         $config_subjects = Config::get('variables.subjects');
         $config_type = Config::get('variables.courseType');
         $score = array();
@@ -372,29 +334,26 @@ class GenerateApplicationDataController extends Controller
         $grade_year = array_keys($terms);
 
         foreach ($grade_year as $acy => $acvy) {
-            if(isset($terms[$acvy]))
-            {
+            if (isset($terms[$acvy])) {
                 foreach ($terms[$acvy] as $tkey => $tvalue) {
                     foreach ($subjects as $skey => $svalue) {
                         $tmp = [];
                         $marks = getSubmissionAcademicScore($submission_id, $config_subjects[$svalue], $tvalue, $acvy, '');
 
                         $tmp['subject'] = $config_subjects[$svalue];
-                        $tmp['courseType'] = array_search($config_subjects[$svalue],$config_type);
+                        $tmp['courseType'] = array_search($config_subjects[$svalue], $config_type);
                         $tmp['academic_year'] = $acvy;
                         $tmp['academic_term'] = $tvalue;
-                        $field = strtolower(str_replace(" ","_", $config_subjects[$svalue]));    
-                        if($gradeInfo->{$field} == "N")
-                        {
+                        $field = strtolower(str_replace(" ", "_", $config_subjects[$svalue]));
+                        if ($gradeInfo->{$field} == "N") {
                             $tmp['grade'] = "NA";
-                        }else{
+                        } else {
                             $tmp['grade'] = $marks;
                         }
 
                         $score[] = $tmp;
                     }
                 }
-
             }
         }
 
@@ -402,7 +361,7 @@ class GenerateApplicationDataController extends Controller
         // {
         //     foreach($terms as $value1)
         //     {
-                
+
         //         $field = strtolower(str_replace(" ","_", $config_subjects[$value]));    
         //         if($gradeInfo->{$field} == "N")
         //         {
@@ -427,25 +386,24 @@ class GenerateApplicationDataController extends Controller
     public function downloadFile($id)
     {
         $data = GenerateApplicationDataGenerated::where("id", $id)->first();
-        if(!empty($data))
-        {
-            $file_path = 'resources/assets/admin/application_data/'.$data->file_name;
+        if (!empty($data)) {
+            $file_path = 'resources/assets/admin/application_data/' . $data->file_name;
             $headers = array(
-              'Content-Type: application/pdf',
+                'Content-Type: application/pdf',
             );
 
             return Response::download($file_path, $data->file_name, $headers);
         }
     }
 
-    
+
 
     public function generateIndividual($id)
     {
 
 
-        $data = Submissions::where("submissions.id", $id)->join("application", "application.id","submissions.application_id")->select("submissions.*","application.enrollment_id")->get();
-          
+        $data = Submissions::where("submissions.id", $id)->join("application", "application.id", "submissions.application_id")->select("submissions.*", "application.enrollment_id")->get();
+
         $final_data = $data;
 
         $subjects = $terms = array();
@@ -454,106 +412,42 @@ class GenerateApplicationDataController extends Controller
 
         $enrollment_id = 0;
         $program_id = 0;
-        $grade = 0;        
-        $status = '';     
+        $grade = 0;
+        $status = '';
         $application_data = Application::where('district_id', Session::get('district_id'))->where('enrollment_id', Session::get('enrollment_id'))->where("status", "Y")->first();
 
         $agc_method = "";
-        foreach($final_data as $key=>$value)
-        {
-            if($value->first_choice != "")
-            {
+        foreach ($final_data as $key => $value) {
+            if ($value->first_choice != "") {
                 $enrollment_id = $value->enrollment_id;
                 $program_id = $value->first_choice_program_id;
-                $grade = $value->next_grade;        
-                $status = $value->submission_status;     
+                $grade = $value->next_grade;
+                $status = $value->submission_status;
 
 
                 $programArr[] = $value->first_choice;
                 $eligibilityData = getEligibilitiesDynamic($value->first_choice, 'Academic Grade Calculation');
-                if(count($eligibilityData) > 0)
-                {
+                if (count($eligibilityData) > 0) {
                     $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
-                    if(!empty($content))
-                    {
-                        if(isset($content->scoring->type))
+                    if (!empty($content)) {
+                        if (isset($content->scoring->type))
                             $agc_method = $content->scoring->type;
                     }
                 }
                 // $eligibilityData = getEligibilities($value->first_choice, 'Academic Grade Calculation');
                 $eligibilityData = getEligibilitiesDynamic($value->first_choice, 'Academic Grades');
-                if(count($eligibilityData) > 0)
-                {
-                    if(!in_array($eligibilityData[0]->id, $eligibilityArr))
-                    {
+                if (count($eligibilityData) > 0) {
+                    if (!in_array($eligibilityData[0]->id, $eligibilityArr)) {
                         $eligibilityArr[] = $eligibilityData[0]->assigned_eigibility_name;
                         $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
-                        if(!empty($content))
-                        {
+                        if (!empty($content)) {
                             // if($content->scoring->type=="DD")
                             // {
-                                $tmp = array();
-                                
-                                foreach($content->subjects as $svalue)
-                                {
-                                    if(!in_array($svalue, $subjects))
-                                    {
-                                        $subjects[] = $svalue;
-                                    }
-                                }
-
-                                // foreach($content->terms_calc as $tvalue)
-                                // {
-                                //     if(!in_array($tvalue, $terms))
-                                //     {
-                                //         $terms[] = $tvalue;
-                                //     }
-                                // }
-
-                                if(isset($content->terms_calc))
-                                {
-                                    foreach ($content->terms_calc as $tkey => $tvalue) {
-                                        if(! \Illuminate\Support\Arr::exists($terms, $tkey)){
-                                            $terms[$tkey] = $tvalue;
-                                        }
-                                    }
-                                }
-                            // }
-                        }                        
-                    }
-
-                }
-            }
-
-            if($value->second_choice != "")
-            {
-                $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grade Calculation');
-                if(count($eligibilityData) > 0)
-                {
-                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
-                    if(!empty($content))
-                    {
-                        if(isset($content->scoring->type))
-                            $agc_method = $content->scoring->type;
-                    }
-                }
-                
-
-                $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grades');
-                if(count($eligibilityData) > 0)
-                {
-                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
-                    if(!empty($content))
-                    {
-                        // if($content->scoring->type=="DD")
-                        // {
                             $tmp = array();
-                            
-                            foreach($content->subjects as $svalue)
-                            {
-                                if(!in_array($svalue, $subjects))
-                                {
-                                    $subjects[] = $value;
+
+                            foreach ($content->subjects as $svalue) {
+                                if (!in_array($svalue, $subjects)) {
+                                    $subjects[] = $svalue;
                                 }
                             }
 
@@ -564,14 +458,59 @@ class GenerateApplicationDataController extends Controller
                             //         $terms[] = $tvalue;
                             //     }
                             // }
-                            if(isset($content->terms_calc))
-                            {
+
+                            if (isset($content->terms_calc)) {
                                 foreach ($content->terms_calc as $tkey => $tvalue) {
-                                    if(! \Illuminate\Support\Arr::exists($terms, $tkey)){
+                                    if (! \Illuminate\Support\Arr::exists($terms, $tkey)) {
                                         $terms[$tkey] = $tvalue;
                                     }
                                 }
                             }
+                            // }
+                        }
+                    }
+                }
+            }
+
+            if ($value->second_choice != "") {
+                $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grade Calculation');
+                if (count($eligibilityData) > 0) {
+                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
+                    if (!empty($content)) {
+                        if (isset($content->scoring->type))
+                            $agc_method = $content->scoring->type;
+                    }
+                }
+
+
+                $eligibilityData = getEligibilitiesDynamic($value->second_choice, 'Academic Grades');
+                if (count($eligibilityData) > 0) {
+                    $content = getEligibilityContent1($eligibilityData[0]->assigned_eigibility_name);
+                    if (!empty($content)) {
+                        // if($content->scoring->type=="DD")
+                        // {
+                        $tmp = array();
+
+                        foreach ($content->subjects as $svalue) {
+                            if (!in_array($svalue, $subjects)) {
+                                $subjects[] = $value;
+                            }
+                        }
+
+                        // foreach($content->terms_calc as $tvalue)
+                        // {
+                        //     if(!in_array($tvalue, $terms))
+                        //     {
+                        //         $terms[] = $tvalue;
+                        //     }
+                        // }
+                        if (isset($content->terms_calc)) {
+                            foreach ($content->terms_calc as $tkey => $tvalue) {
+                                if (! \Illuminate\Support\Arr::exists($terms, $tkey)) {
+                                    $terms[$tkey] = $tvalue;
+                                }
+                            }
+                        }
                         // }
                     }
                 }
@@ -583,8 +522,7 @@ class GenerateApplicationDataController extends Controller
         } // grade ends
 
         $student_data = array();
-        foreach($final_data as $key=>$value)
-        {
+        foreach ($final_data as $key => $value) {
             $score = $this->collectionStudentGrade($value->id, $subjects, $terms, $value->next_grade);
             // $cdi_data = DB::table("submission_conduct_discplinary_info")->where("submission_id", $value->id)->first();
             // if(!empty($cdi_data))
@@ -607,45 +545,38 @@ class GenerateApplicationDataController extends Controller
             $tmp['id'] = $value->id;
             $tmp['student_id'] = $value->student_id;
             $tmp['confirmation_no'] = $value->confirmation_no;
-            $tmp['name'] = $value->first_name." ".$value->last_name;
+            $tmp['name'] = $value->first_name . " " . $value->last_name;
             $tmp['score'] = $score;
 
             $avgSum = $avgCnt = 0;
-           //dd($score);
+            //dd($score);
             $ywa = [];
-            foreach($score as $sk=>$sv)
-            {
+            foreach ($score as $sk => $sv) {
                 $ywa[$sv['academic_year']][] = $sv['grade'];
                 $avgSum += $sv['grade'];
-                $avgCnt ++;
+                $avgCnt++;
             }
 
 
 
             $tmp['agc_method'] = $agc_method;
-            if($agc_method == "YWA")
-            {
-                
+            if ($agc_method == "YWA") {
+
                 $tmp_ywa = [];
-                foreach($ywa as $yk=>$yv)
-                {
+                foreach ($ywa as $yk => $yv) {
                     $sum = 0;
-                    foreach($yv as $yvk=>$yvv)
-                    {
+                    foreach ($yv as $yvk => $yvv) {
                         $sum += $yvv;
                     }
-                    if($sum > 0)
-                        $tmp_ywa[$yk] = number_format($sum/count($yv), 2);
+                    if ($sum > 0)
+                        $tmp_ywa[$yk] = number_format($sum / count($yv), 2);
                 }
                 $tmp['ywa'] = $tmp_ywa;
             }
-            
-            if($avgCnt > 0)
-            {
-                $tmp['avgGrade'] = number_format($avgSum/$avgCnt, 2);
-            }
-            else
-            {
+
+            if ($avgCnt > 0) {
+                $tmp['avgGrade'] = number_format($avgSum / $avgCnt, 2);
+            } else {
                 $tmp['avgGrade'] = 0;
             }
 
@@ -660,19 +591,18 @@ class GenerateApplicationDataController extends Controller
             $tmp['current_school'] = $value->current_school;
 
             $student_data[] = $tmp;
-
         }
 
-        view()->share('student_data',$student_data);
-        view()->share('subjects',$subjects);
-        view()->share('terms',$terms);
+        view()->share('student_data', $student_data);
+        view()->share('subjects', $subjects);
+        view()->share('terms', $terms);
         view()->share("application_data", $application_data);
         // return view('GenerateApplicationData::pdfview');
         // return view('GenerateApplicationData::pdfview');
-        $pdf = PDF::loadView('GenerateApplicationData::pdfview',['student_data','terms', 'subjects','application_data']);
+        $pdf = PDF::loadView('GenerateApplicationData::pdfview', ['student_data', 'terms', 'subjects', 'application_data']);
 
         $path = "resources/assets/admin/application_data";
-        $fileName =  "ApplicationData-".strtotime(date("Y-m-d H:i:s")) . '.' . 'pdf' ;
+        $fileName =  "ApplicationData-" . strtotime(date("Y-m-d H:i:s")) . '.' . 'pdf';
         $pdf->save($path . '/' . $fileName);
 
         $insert = array();
@@ -687,53 +617,51 @@ class GenerateApplicationDataController extends Controller
 
         return $pdf->download($fileName);
     }
-    
+
     public function generateContractIndex()
     {
         $enrollment = Enrollment::where("district_id", Session::get('district_id'))->get();
-        $programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status','Y')->orderBy('name')->get();
+        $programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status', 'Y')->orderBy('name')->get();
         $grades = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('next_grade')->select(DB::raw("DISTINCT(next_grade)"))->get();
         $submission_status = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('submission_status')->select(DB::raw("DISTINCT(submission_status)"))->get();
-        
-        
-        return view("GenerateApplicationData::contract_index", compact('enrollment','programs','grades', 'submission_status'));
+
+
+        return view("GenerateApplicationData::contract_index", compact('enrollment', 'programs', 'grades', 'submission_status'));
     }
-    
+
     public function generateContract(Request $request)
     {
         $enrollment_id = $request['enrollment'];
         $grade = $request['grade'];
         $application_data = Application::where('district_id', Session::get('district_id'))->where('enrollment_id', Session::get('enrollment_id'))->where("status", "Y")->first();
-        
-        $data = SubmissionsFinalStatus::where('contract_status','Signed')
-                ->join('submissions','submissions_final_status.submission_id','submissions.id')
-                ->join("application", "application.id","submissions.application_id")
-                ->select('submissions.*',"submissions_final_status.*",'application.enrollment_id')
-                ->where("submissions.district_id", Session::get('district_id'))
-                ->where('submissions.submission_status', 'Offered and Accepted')
-                ->where("application.enrollment_id", $enrollment_id);
 
-        if($request['awarded_program'] != '' && $request['awarded_program'] != "0")
-        {
+        $data = SubmissionsFinalStatus::where('contract_status', 'Signed')
+            ->join('submissions', 'submissions_final_status.submission_id', 'submissions.id')
+            ->join("application", "application.id", "submissions.application_id")
+            ->select('submissions.*', "submissions_final_status.*", 'application.enrollment_id')
+            ->where("submissions.district_id", Session::get('district_id'))
+            ->where('submissions.submission_status', 'Offered and Accepted')
+            ->where("application.enrollment_id", $enrollment_id);
+
+        if ($request['awarded_program'] != '' && $request['awarded_program'] != "0") {
             $data->where('submissions.awarded_school', $request['awarded_program']);
         }
-        
-        if($grade != 'All')
-        {
+
+        if ($grade != 'All') {
             $data->where('submissions.next_grade', $grade);
         }
         $submissions = $data->limit(10)->get();
         $total_record = count($submissions->toArray());
         $student_data = array();
 
-        view()->share('submissions',$submissions);
+        view()->share('submissions', $submissions);
         view()->share("application_data", $application_data);
-        $pdf = PDF::loadView('GenerateApplicationData::contract_sign',['submissions','application_data']);
-        
+        $pdf = PDF::loadView('GenerateApplicationData::contract_sign', ['submissions', 'application_data']);
+
         $path = "resources/assets/admin/online_contract";
-        $fileName =  "Contract_Offered_and_Accepted-".strtotime(date("Y-m-d H:i:s")) . '.' . 'pdf' ;
+        $fileName =  "Contract_Offered_and_Accepted-" . strtotime(date("Y-m-d H:i:s")) . '.' . 'pdf';
         $pdf->save($path . '/' . $fileName);
-        
+
         $insert = array();
         $insert['enrollment_id'] = $enrollment_id;
         $insert['grade'] = $grade;
@@ -741,8 +669,8 @@ class GenerateApplicationDataController extends Controller
         $insert['total_records'] = $total_record;
         $insert['file_name'] = $fileName;
         $id = GenerateContractDataGenerated::create($insert);
-        
-        
+
+
         return $pdf->download($fileName);
     }
 
@@ -755,11 +683,10 @@ class GenerateApplicationDataController extends Controller
     public function downloadContractFile($id)
     {
         $data = GenerateContractDataGenerated::where("id", $id)->first();
-        if(!empty($data))
-        {
-            $file_path = 'resources/assets/admin/online_contract/'.$data->file_name;
+        if (!empty($data)) {
+            $file_path = 'resources/assets/admin/online_contract/' . $data->file_name;
             $headers = array(
-              'Content-Type: application/pdf',
+                'Content-Type: application/pdf',
             );
 
             return Response::download($file_path, $data->file_name, $headers);
@@ -770,31 +697,31 @@ class GenerateApplicationDataController extends Controller
     public function allGeneratedFormsIndex()
     {
         $rs = Application::where("enrollment_id", Session::get("enrollment_id"))->select("id")->get()->toArray();
-        $avail_program_ary = \App\Modules\Program\Models\ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->whereIn("eligibility_template.name", ["Recommendation Form","Writing Prompt"])->where('program_eligibility.status', 'Y')->whereIn("program_eligibility.application_id", $rs)->pluck('program_id')->toArray();
+        $avail_program_ary = \App\Modules\Program\Models\ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->whereIn("eligibility_template.name", ["Recommendation Form", "Writing Prompt"])->where('program_eligibility.status', 'Y')->whereIn("program_eligibility.application_id", $rs)->pluck('program_id')->toArray();
 
         $submissions = Submissions::where('submissions.district_id', Session::get('district_id'))
-                ->where(function($q) use ($avail_program_ary) {
-                    $q->whereIn('first_choice_program_id', $avail_program_ary);
-                    $q->orWhereIn('second_choice_program_id', $avail_program_ary);
-                })->whereIn('submission_status', array('Active', 'Pending'))->where('enrollment_id', Session::get('enrollment_id'));
+            ->where(function ($q) use ($avail_program_ary) {
+                $q->whereIn('first_choice_program_id', $avail_program_ary);
+                $q->orWhereIn('second_choice_program_id', $avail_program_ary);
+            })->whereIn('submission_status', array('Active', 'Pending'))->where('enrollment_id', Session::get('enrollment_id'));
 
         $enrollment = Enrollment::where("district_id", Session::get('district_id'))->get();
 
         $programs = Program::where("district_id", Session::get('district_id'))
-                        ->where('enrollment_id', Session::get("enrollment_id"))
-                        ->whereIn('id',$avail_program_ary)
-                        ->where('status','Y')
-                        ->orderBy('name')
-                        ->get();
+            ->where('enrollment_id', Session::get("enrollment_id"))
+            ->whereIn('id', $avail_program_ary)
+            ->where('status', 'Y')
+            ->orderBy('name')
+            ->get();
 
         $ids = array('"PreK"', '"K"', '"1"', '"2"', '"3"', '"4"', '"5"', '"6"', '"7"', '"8"', '"9"', '"10"', '"11"', '"12"');
         $ids_ordered = implode(',', $ids);
 
-        $grades = $submissions->orderByRaw('FIELD(submissions.next_grade,'.implode(",",$ids).')')->select(DB::raw("DISTINCT(next_grade)"))->get();
+        $grades = $submissions->orderByRaw('FIELD(submissions.next_grade,' . implode(",", $ids) . ')')->select(DB::raw("DISTINCT(next_grade)"))->get();
 
         $submission_status = $submissions->orderBy('submission_status')->select(DB::raw("DISTINCT(submission_status)"))->get();
 
-        return view("GenerateApplicationData::generated_form_index", compact('enrollment','programs','grades', 'submission_status'));
+        return view("GenerateApplicationData::generated_form_index", compact('enrollment', 'programs', 'grades', 'submission_status'));
     }
 
     public function exportAllGeneratedFormsIndex(Request $request)
@@ -807,52 +734,49 @@ class GenerateApplicationDataController extends Controller
 
 
         $data = Submissions::where("submissions.district_id", Session::get("district_id"))->where("submissions.enrollment_id", Session::get("enrollment_id"))
-                ->join("application", "application.id","submissions.application_id")
-                ->where("application.enrollment_id", $enrollment_id);
+            ->join("application", "application.id", "submissions.application_id")
+            ->where("application.enrollment_id", $enrollment_id);
 
-        if($submitted_form == 'recommendation_form'){
-            $data = $data->join("submission_recommendation", "submission_recommendation.submission_id","submissions.id")
-                        ->select("submissions.*","submission_recommendation.*");
-        }else{
-            $data = $data->join('writing_prompt','writing_prompt.submission_id','submissions.id')
-                            ->select("submissions.*", 'writing_prompt.*');
+        if ($submitted_form == 'recommendation_form') {
+            $data = $data->join("submission_recommendation", "submission_recommendation.submission_id", "submissions.id")
+                ->select("submissions.*", "submission_recommendation.*");
+        } else {
+            $data = $data->join('writing_prompt', 'writing_prompt.submission_id', 'submissions.id')
+                ->select("submissions.*", 'writing_prompt.*');
         }
 
-        if($program_id != '0' && $program_id != '')
-        {
-            $data->where(function($q) use ($program_id) {
-                    $q->where('first_choice_program_id', $program_id);
-                    $q->orWhere('second_choice_program_id', $program_id);
-                });
+        if ($program_id != '0' && $program_id != '') {
+            $data->where(function ($q) use ($program_id) {
+                $q->where('first_choice_program_id', $program_id);
+                $q->orWhere('second_choice_program_id', $program_id);
+            });
         }
 
-        if($grade != 'All')
-        {
+        if ($grade != 'All') {
             $data->where('next_grade', $grade);
         }
-        if($status != 'All')
-        {
+        if ($status != 'All') {
             $data->where('submission_status', $status);
         }
         $final_data = $data->get();
 
 
-        if($submitted_form == 'recommendation_form'){
-            $pdf = PDF::loadView('GenerateApplicationData::all_recommendation_form_pdf',['final_data'=>$final_data]);
-            $fileName =  "AllRecommendationForm-".strtotime(date("Y-m-d H:i:s")) . '.pdf';
-        }else{
-            foreach($final_data as $key=>$wp){
+        if ($submitted_form == 'recommendation_form') {
+            $pdf = PDF::loadView('GenerateApplicationData::all_recommendation_form_pdf', ['final_data' => $final_data]);
+            $fileName =  "AllRecommendationForm-" . strtotime(date("Y-m-d H:i:s")) . '.pdf';
+        } else {
+            foreach ($final_data as $key => $wp) {
 
                 $wp_detail = \App\Modules\WritingPrompt\Models\WritingPromptDetail::where('wp_id', $wp->id)->get();
-                if (!empty($wp_detail)) { 
+                if (!empty($wp_detail)) {
                     $final_data[$key]['writing_prompt_detail'] = $wp_detail;
                 }
 
                 $final_data[$key]['program_name'] = getProgramName($wp->program_id);
             }
 
-            $pdf = PDF::loadView('GenerateApplicationData::all_writing_prompt_pdf',['final_data'=>$final_data]);
-            $fileName =  "AllWritingPrompt-".strtotime(date("Y-m-d H:i:s")) . '.pdf';
+            $pdf = PDF::loadView('GenerateApplicationData::all_writing_prompt_pdf', ['final_data' => $final_data]);
+            $fileName =  "AllWritingPrompt-" . strtotime(date("Y-m-d H:i:s")) . '.pdf';
         }
         return $pdf->download($fileName);
     }

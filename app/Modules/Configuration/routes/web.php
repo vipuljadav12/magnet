@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 Route::group(['prefix'=>'admin/Configuration','module' => 'Configuration', 'middleware' => ['web','auth'], 'namespace' => 'App\Modules\Configuration\Controllers'], function() {
 
     Route::get('/', 'ConfigurationController@index');

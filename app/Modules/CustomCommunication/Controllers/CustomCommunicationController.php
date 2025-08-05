@@ -10,7 +10,7 @@ use App\Modules\School\Models\Grade;
 use App\Modules\Application\Models\Application;
 use App\Modules\Enrollment\Models\Enrollment;
 use App\Modules\Program\Models\Program;
-use App\Modules\Submissions\Models\{Submissions,SubmissionGrade,SubmissionConductDisciplinaryInfo,SubmissionData,SubmissionRecommendation};
+use App\Modules\Submissions\Models\{Submissions, SubmissionGrade, SubmissionConductDisciplinaryInfo, SubmissionData, SubmissionRecommendation};
 use App\Modules\CustomCommunication\Models\CustomCommunication;
 use App\Modules\CustomCommunication\Models\CustomCommunicationData;
 use Maatwebsite\Excel\Facades\Excel;
@@ -18,57 +18,55 @@ use App\Modules\CustomCommunication\Export\{CustomCommunicationEmails};
 use App\Modules\ProcessSelection\Models\ProcessSelection;
 use App\Modules\Program\Models\ProgramEligibility;
 use App\Modules\WritingPrompt\Models\WritingPrompt;
-use Config;
-use Session;
-use DB;
-use Validator;  
-use PDF;
-use Auth;
-use Response;
-use App\Modules\Submissions\Models\{SubmissionsFinalStatus,SubmissionsWaitlistFinalStatus};
+use App\Modules\Submissions\Models\{SubmissionsFinalStatus, SubmissionsWaitlistFinalStatus};
 use App\Modules\DistrictConfiguration\Models\DistrictConfiguration;
 use App\Traits\AuditTrail;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Session;
 
 class CustomCommunicationController extends Controller
 {
     use AuditTrail;
-	public function index()
-	{
-		$data = CustomCommunication::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->get();
-		return view("CustomCommunication::index", compact('data'));
-	}
+    public function index()
+    {
+        $data = CustomCommunication::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->get();
+        return view("CustomCommunication::index", compact('data'));
+    }
 
     public function create()
     {
         $enrollment = Enrollment::where("district_id", Session::get('district_id'))->get();
-        $programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status','Y')->orderBy('name')->get();
+        $programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status', 'Y')->orderBy('name')->get();
         $grades = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('next_grade')->select(DB::raw("DISTINCT(next_grade)"))->get();
         $submission_status = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('submission_status')->select(DB::raw("DISTINCT(submission_status)"))->get();
 
-        return view("CustomCommunication::create", compact('enrollment','programs','grades', 'submission_status'));
+        return view("CustomCommunication::create", compact('enrollment', 'programs', 'grades', 'submission_status'));
     }
 
     public function edit($id)
     {
         $data = CustomCommunication::where("id", $id)->first();
         $enrollment = Enrollment::where("district_id", Session::get('district_id'))->get();
-        $programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status','Y')->orderBy('name')->get();
+        $programs = Program::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->where('status', 'Y')->orderBy('name')->get();
         $grades = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('next_grade')->select(DB::raw("DISTINCT(next_grade)"))->get();
         $submission_status = Submissions::where("district_id", Session::get('district_id'))->where("enrollment_id", Session::get('enrollment_id'))->orderBy('submission_status')->select(DB::raw("DISTINCT(submission_status)"))->get();
 
 
-        return view("CustomCommunication::edit", compact('enrollment','programs','grades', 'data', 'submission_status'));
+        return view("CustomCommunication::edit", compact('enrollment', 'programs', 'grades', 'data', 'submission_status'));
     }
 
     public function store(Request $request)
     {
         //print_r($request->all());exit;
         $validateData = $request->validate([
-            'template_name' =>'required|max:255',
-            'enrollment_id' =>'required',
-            'program' =>'required',
-            'grade' =>'required',
-            'submission_status' =>'required',
+            'template_name' => 'required|max:255',
+            'enrollment_id' => 'required',
+            'program' => 'required',
+            'grade' => 'required',
+            'submission_status' => 'required',
             //'mail_subject' =>'required',
             //'mail_body' =>'required',
             //'letter_subject' =>'required',
@@ -77,31 +75,26 @@ class CustomCommunicationController extends Controller
         $req = $request->all();
         $data = array();
         $data['district_id'] = Session::get('district_id');
-        $data['template_name'] = $req['template_name']; 
-        $data['enrollment_id'] = $req['enrollment_id']; 
-        $data['program'] = $req['program']; 
-        $data['grade'] = $req['grade']; 
-        $data['submission_status'] = $req['submission_status']; 
-        if(isset($request->send_email_now) || isset($request->save_email))
-        {
-            $data['mail_subject'] = $req['mail_subject']; 
-            $data['mail_body'] = $req['mail_body']; 
+        $data['template_name'] = $req['template_name'];
+        $data['enrollment_id'] = $req['enrollment_id'];
+        $data['program'] = $req['program'];
+        $data['grade'] = $req['grade'];
+        $data['submission_status'] = $req['submission_status'];
+        if (isset($request->send_email_now) || isset($request->save_email)) {
+            $data['mail_subject'] = $req['mail_subject'];
+            $data['mail_body'] = $req['mail_body'];
         }
-        if(isset($request->generate_letter_now) || isset($request->save_letter))
-        {
-            $data['letter_body'] = $req['letter_body']; 
+        if (isset($request->generate_letter_now) || isset($request->save_letter)) {
+            $data['letter_body'] = $req['letter_body'];
         }
 
-        $id=CustomCommunication::create($data)->id;
+        $id = CustomCommunication::create($data)->id;
         //$newObj=CustomCommunication::where('id',$id)->first();
         //$this->modelCreate($newObj,"custom_communication");
 
-        if(isset($request->generate_letter_now))
-        {
+        if (isset($request->generate_letter_now)) {
             return $this->generate_letter_now($id);
-        }
-        elseif(isset($request->send_email_now))
-        {
+        } elseif (isset($request->send_email_now)) {
             $this->send_email_now($id);
         }
 
@@ -110,8 +103,7 @@ class CustomCommunicationController extends Controller
         } else {
             Session::flash("error", "Please Try Again.");
         }
-        return redirect('admin/CustomCommunication/edit/'.$id);
-
+        return redirect('admin/CustomCommunication/edit/' . $id);
     }
 
 
@@ -119,11 +111,11 @@ class CustomCommunicationController extends Controller
     {
         //print_r($request->all());exit;
         $validateData = $request->validate([
-            'template_name' =>'required|max:255',
-            'enrollment_id' =>'required',
-            'program' =>'required',
-            'grade' =>'required',
-            'submission_status' =>'required',
+            'template_name' => 'required|max:255',
+            'enrollment_id' => 'required',
+            'program' => 'required',
+            'grade' => 'required',
+            'submission_status' => 'required',
             //'mail_subject' =>'required',
             //'mail_body' =>'required',
             //'letter_subject' =>'required',
@@ -133,46 +125,39 @@ class CustomCommunicationController extends Controller
 
         $data = array();
         $data['district_id'] = Session::get('district_id');
-        $data['template_name'] = $req['template_name']; 
-        $data['enrollment_id'] = $req['enrollment_id']; 
-        $data['program'] = $req['program']; 
-        $data['grade'] = $req['grade']; 
-        $data['submission_status'] = $req['submission_status']; 
-        if(isset($request->send_email_now) || isset($request->save_email))
-        {
-            $data['mail_subject'] = $req['mail_subject']; 
-            $data['mail_body'] = $req['mail_body']; 
+        $data['template_name'] = $req['template_name'];
+        $data['enrollment_id'] = $req['enrollment_id'];
+        $data['program'] = $req['program'];
+        $data['grade'] = $req['grade'];
+        $data['submission_status'] = $req['submission_status'];
+        if (isset($request->send_email_now) || isset($request->save_email)) {
+            $data['mail_subject'] = $req['mail_subject'];
+            $data['mail_body'] = $req['mail_body'];
         }
-        if(isset($request->generate_letter_now) || isset($request->save_letter))
-        {
-            $data['letter_body'] = $req['letter_body']; 
+        if (isset($request->generate_letter_now) || isset($request->save_letter)) {
+            $data['letter_body'] = $req['letter_body'];
         }
 
-        $initObj = CustomCommunication::where("id",$id)->first();
-        $result=CustomCommunication::where("id",$id)->update($data);
-        $newObj = CustomCommunication::where("id",$id)->first();
+        $initObj = CustomCommunication::where("id", $id)->first();
+        $result = CustomCommunication::where("id", $id)->update($data);
+        $newObj = CustomCommunication::where("id", $id)->first();
         //$this->modelChanges($initObj,$newObj,"custom-communication");
 
-        if(isset($request->generate_letter_now))
-        {
+        if (isset($request->generate_letter_now)) {
             return $this->generate_letter_now($id);
             Session::flash("success", "Custom Communication generated successfully.");
-        }
-        elseif(isset($request->send_email_now))
-        {
+        } elseif (isset($request->send_email_now)) {
             $this->send_email_now($id);
             Session::flash("success", "Custom Communication emails sent successfully.");
-        }
-        else
-        {
-             Session::flash("success", "Custom Communication updated successfully.");
+        } else {
+            Session::flash("success", "Custom Communication updated successfully.");
         }
 
-       
-        return redirect('admin/CustomCommunication/edit/'.$id);
+
+        return redirect('admin/CustomCommunication/edit/' . $id);
     }
 
-    public function generate_letter_now($id, $preview=false)
+    public function generate_letter_now($id, $preview = false)
     {
         set_time_limit(0);
         $last_date_online_acceptance = $last_date_offline_acceptance = "";
@@ -185,40 +170,36 @@ class CustomCommunicationController extends Controller
         $enrollment_id = $cdata->enrollment_id;
         $status = $cdata->submission_status;
         $grade = $cdata->grade;
-//        $application_data = Application::where('district_id', Session::get('district_id'))->where("status", "Y")->first();
+        //        $application_data = Application::where('district_id', Session::get('district_id'))->where("status", "Y")->first();
         $application_data = Application::join("enrollments", "enrollments.id", "application.enrollment_id")->where('application.district_id', Session::get('district_id'))->where("application.status", "Y")->where("application.enrollment_id", Session::get("enrollment_id"))->select("application.*", "enrollments.school_year")->first();
 
-        $data = Submissions::where("submissions.district_id", Session::get("district_id"))->where("submissions.enrollment_id", Session::get("enrollment_id"))->join("application", "application.id","submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
-        if($program_id != 0)
-        {
-            $data->where(function($q) use ($program_id) {
+        $data = Submissions::where("submissions.district_id", Session::get("district_id"))->where("submissions.enrollment_id", Session::get("enrollment_id"))->join("application", "application.id", "submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
+        if ($program_id != 0) {
+            $data->where(function ($q) use ($program_id) {
                 $q->where("first_choice_program_id", $program_id)
-                  ->orWhere("second_choice_program_id", $program_id)->get();
-                });
+                    ->orWhere("second_choice_program_id", $program_id)->get();
+            });
         }
-        if($grade != 'All')
-        {
+        if ($grade != 'All') {
             $data->where('next_grade', $grade);
         }
-        if($status != 'All' && $status != "Missing Writing Samples")
-        {
-            if($status == "Offer Accepted and Contract Pending"){
+        if ($status != 'All' && $status != "Missing Writing Samples") {
+            if ($status == "Offer Accepted and Contract Pending") {
                 $data->where('submission_status', "Offered and Accepted");
-            }elseif($status == "Missing Recommendations"){
+            } elseif ($status == "Missing Recommendations") {
                 $data->whereIn('submission_status', array('Active', 'Pending'));
-            }else{
+            } else {
                 $data->where('submission_status', $status);
             }
         }
         $final_data = $data->get();
         $student_data = array();
-        foreach($final_data as $key=>$value)
-        {
+        foreach ($final_data as $key => $value) {
             //$application = Application::where('id', $value->application_id)->first();
 
             $last_process = ProcessSelection::where("enrollment_id", $value->enrollment_id)->where("commited", "Yes")->where("application_id", $value->form_id)->orderBy("created_at", "DESC")->first();
 
-            if(!empty($last_process))
+            if (!empty($last_process))
                 $last_type = $last_process->type;
             else
                 $last_type = "regular";
@@ -226,13 +207,10 @@ class CustomCommunicationController extends Controller
             $online_date = "last_date_online_acceptance";
             $offline_date = "last_date_offline_acceptance";
 
-            if($last_type == "waitlist")
-            {
+            if ($last_type == "waitlist") {
                 $online_date = "last_date_late_submission_online_acceptance";
                 $offline_date = "last_date_late_submission_offline_acceptance";
-            }
-            elseif($last_type == "waitlist")
-            {
+            } elseif ($last_type == "waitlist") {
                 $online_date = "last_date_waitlist_online_acceptance";
                 $offline_date = "last_date_waitlist_offline_acceptance";
             }
@@ -241,13 +219,13 @@ class CustomCommunicationController extends Controller
 
             $last_date_online_acceptance = $last_date_offline_acceptance = "";
             $rs = DistrictConfiguration::where("name", $online_date)->where("enrollment_id", Session::get("enrollment_id"))->select("value")->first();
-            if(!empty($rs))
+            if (!empty($rs))
                 $last_date_online_acceptance = getDateTimeFormat($rs->value);
             else
                 $last_date_online_acceptance = "";
 
             $rs = DistrictConfiguration::where("name", $offline_date)->where("enrollment_id", Session::get("enrollment_id"))->select("value")->first();
-            if(!empty($rs))
+            if (!empty($rs))
                 $last_date_offline_acceptance = getDateTimeFormat($rs->value);
             else
                 $last_date_offline_acceptance = "";
@@ -256,75 +234,69 @@ class CustomCommunicationController extends Controller
 
 
             $subms = SubmissionsFinalStatus::where("submission_id", $value->id)->first();
-            $subms1 = SubmissionsWaitlistFinalStatus::where("submission_id", $value->id)->where(function($q) {
+            $subms1 = SubmissionsWaitlistFinalStatus::where("submission_id", $value->id)->where(function ($q) {
                 $q->where("first_offer_status", "Accepted")->orWhere("second_offer_status", "Accepted")->get();
-                })->first();
+            })->first();
 
-            if($status == "Missing Recommendations"){
+            if ($status == "Missing Recommendations") {
                 $recomm_programs = ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->where("eligibility_template.name", "Recommendation Form")->join("program", "program.id", "program_eligibility.program_id")->where("program.enrollment_id", $enrollment_id)->pluck('program_eligibility.program_id')->all();
 
-                if(in_array($value->first_choice_program_id, $recomm_programs) || in_array($value->second_choice_program_id, $recomm_programs)){
-                    $recommendation = SubmissionData::where('submission_id',$value->id)->where('config_name','LIKE','recommendation%')->pluck('config_value')->toArray();
+                if (in_array($value->first_choice_program_id, $recomm_programs) || in_array($value->second_choice_program_id, $recomm_programs)) {
+                    $recommendation = SubmissionData::where('submission_id', $value->id)->where('config_name', 'LIKE', 'recommendation%')->pluck('config_value')->toArray();
 
-                    if(isset($recommendation) && !empty($recommendation)){
-                        $submitted_recom = SubmissionRecommendation::where('submission_id',$value->id)->pluck('config_value')->toArray();
+                    if (isset($recommendation) && !empty($recommendation)) {
+                        $submitted_recom = SubmissionRecommendation::where('submission_id', $value->id)->pluck('config_value')->toArray();
                         $missing_recom = array_diff($recommendation, $submitted_recom);
 
-                        if(empty($missing_recom)){
+                        if (empty($missing_recom)) {
                             // dd($value->id, $missing_recom, !isset($missing_recom));
                             continue;
                         }
-                    }else{
+                    } else {
                         continue;
                     }
-
-                }else{
+                } else {
                     continue;
                 }
-            }elseif($status == "Missing Writing Samples"){
+            } elseif ($status == "Missing Writing Samples") {
                 $writing_prompt_programs = ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->where("eligibility_template.name", "Writing Prompt")->pluck('program_id')->all();
                 $choice_writing_prompt = [];
                 $foption = "";
-                if(in_array($value->first_choice_program_id, $writing_prompt_programs)){
+                if (in_array($value->first_choice_program_id, $writing_prompt_programs)) {
                     $choice_writing_prompt[] = $value->first_choice_program_id;
                     $foption = "first";
-                } 
+                }
 
-                if(in_array($value->second_choice_program_id, $writing_prompt_programs)){
+                if (in_array($value->second_choice_program_id, $writing_prompt_programs)) {
                     $choice_writing_prompt[] = $value->second_choice_program_id;
                     $foption = "second";
                 }
 
-                if(!empty($choice_writing_prompt)){
+                if (!empty($choice_writing_prompt)) {
                     $writing_prompt_data = WritingPrompt::where('submission_id', $value->id)->whereIn('program_id', $choice_writing_prompt)->first();
 
-                    if(isset($writing_prompt_data) && !empty($writing_prompt_data)){
+                    if (isset($writing_prompt_data) && !empty($writing_prompt_data)) {
                         continue;
-                    }else{
-                        
+                    } else {
+
                         $tmp['writing_prompt_due_date'] = getDateTimeFormat($application_data1->writing_prompt_due_date);
-                        $rsT = DB::table("submission_data")->where("submission_id", $value->id)->where("config_name", "wp_".$foption."_choice_link")->first();
-                        if(!empty($rsT))
-                            $tmp['writing_prompt_link'] = url('/WritingPrompt/')."/".$rsT->config_value;
+                        $rsT = DB::table("submission_data")->where("submission_id", $value->id)->where("config_name", "wp_" . $foption . "_choice_link")->first();
+                        if (!empty($rsT))
+                            $tmp['writing_prompt_link'] = url('/WritingPrompt/') . "/" . $rsT->config_value;
                         else
                             $tmp['writing_prompt_link'] = '';
-                    
-                        
-                        
                     }
-                }else{
+                } else {
                     continue;
                 }
-
-                
             }
 
-           
+
 
             $tmp['id'] = $value->id;
             $tmp['student_id'] = $value->student_id;
             $tmp['confirmation_no'] = $value->confirmation_no;
-            $tmp['name'] = $value->first_name." ".$value->last_name;
+            $tmp['name'] = $value->first_name . " " . $value->last_name;
             $tmp['grade'] = $tmp['next_grade'] = $value->next_grade;
             $tmp['current_grade'] = $value->current_grade;
             $tmp['current_school'] = $value->current_school;
@@ -333,15 +305,15 @@ class CustomCommunicationController extends Controller
             $tmp['first_choice'] = getProgramName($value->first_choice_program_id);
             $tmp['second_choice'] = getProgramName($value->second_choice_program_id);
             $tmp['birth_date'] = getDateFormat($value->birthday);
-            $tmp['student_name'] = $value->first_name." ".$value->last_name;
-            $tmp['parent_name'] = $value->parent_first_name." ".$value->parent_last_name;
+            $tmp['student_name'] = $value->first_name . " " . $value->last_name;
+            $tmp['parent_name'] = $value->parent_first_name . " " . $value->parent_last_name;
             $tmp['parent_email'] = $value->parent_email;
             $tmp['student_id'] = $value->student_id;
             $tmp['submission_date'] = getDateTimeFormat($value->created_at);
             $tmp['transcript_due_date'] = getDateTimeFormat($application_data1->transcript_due_date);
             $tmp['application_url'] = url('/');
             $tmp['signature'] = get_signature('letter_signature');
-            $tmp['parent_grade_cdi_upload_link'] = url('/upload/'.$value->application_id.'/grade');
+            $tmp['parent_grade_cdi_upload_link'] = url('/upload/' . $value->application_id . '/grade');
 
             $program_name = "";
             $program_name_with_grade = "";
@@ -357,78 +329,56 @@ class CustomCommunicationController extends Controller
             $tmp['program_name'] = getProgramName($value->first_choice_program_id);
             $tmp['program_name_with_grade'] = getProgramName($value->first_choice_program_id) . " - Grade " . $tmp['next_grade'];
 
-            $tmp['parent_address'] = $value->address."<br>". $value->city.", ".$value->state." ".$value->zip;
+            $tmp['parent_address'] = $value->address . "<br>" . $value->city . ", " . $value->state . " " . $value->zip;
 
-            if($status != "Denied due to Incomplete Records" && $status != "Denied due to Ineligibility")
-            {
-                if(!empty($subms))
-                {
-                    if($subms->first_choice_final_status == "Offered")
-                    {
+            if ($status != "Denied due to Incomplete Records" && $status != "Denied due to Ineligibility") {
+                if (!empty($subms)) {
+                    if ($subms->first_choice_final_status == "Offered") {
                         $program_name = getProgramName($value->first_choice_program_id);
-                        $program_name_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
+                        $program_name_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                         $offer_program = $program_name;
                         $offer_program_with_grade = $program_name_with_grade;
 
-                        if($subms->second_choice_final_status == "Waitlisted")
-                        {
+                        if ($subms->second_choice_final_status == "Waitlisted") {
                             $waitlist_program = getProgramName($value->second_choice_program_id);
-                            $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
+                            $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                         }
-                    }
-                    elseif($subms->second_choice_final_status == "Offered")
-                    {
+                    } elseif ($subms->second_choice_final_status == "Offered") {
                         $program_name = getProgramName($value->second_choice_program_id);
-                        $program_name_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
+                        $program_name_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                         $offer_program = $program_name;
                         $offer_program_with_grade = $program_name_with_grade;
 
-                        if($subms->first_choice_final_status == "Waitlisted")
-                        {
+                        if ($subms->first_choice_final_status == "Waitlisted") {
                             $waitlist_program = getProgramName($value->first_choice_program_id);
-                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
+                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                         }
+                    } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted") {
+                        $waitlist_program = getProgramName($value->first_choice_program_id);
+                        $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
 
+                        $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                        $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                        $waitlist_program_2 = getProgramName($value->first_choice_program_id);
+                        $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                    } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending") {
+                        $waitlist_program = getProgramName($value->first_choice_program_id);
+                        $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                        $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                        $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                    } elseif ($subms->second_choice_final_status == "Waitlisted") {
+                        $waitlist_program = getProgramName($value->second_choice_program_id);
+                        $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
+
+                        $waitlist_program_2 = getProgramName($value->second_choice_program_id);
+                        $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                     }
-                    elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted")
-                    {
-                            $waitlist_program = getProgramName($value->first_choice_program_id);
-                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                            $waitlist_program_2 = getProgramName($value->first_choice_program_id);
-                            $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                    }
-                    elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending")
-                    {
-                            $waitlist_program = getProgramName($value->first_choice_program_id);
-                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-                    }
-                    elseif($subms->second_choice_final_status == "Waitlisted")
-                    {
-                            $waitlist_program = getProgramName($value->second_choice_program_id);
-                            $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                            $waitlist_program_2 = getProgramName($value->second_choice_program_id);
-                            $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                    }
-
-
-
                 }
             }
 
-            if($program_name != "")
-            {
+            if ($program_name != "") {
                 $tmp['program_name'] = $program_name;
                 $tmp['program_name_with_grade'] = $program_name_with_grade;
             }
@@ -448,20 +398,18 @@ class CustomCommunicationController extends Controller
             $tmp['school_year'] = $application_data1->school_year;
             $tmp['enrollment_period'] = $tmp['school_year'];
             $t1 = explode("-", $tmp['school_year']);
-            $tmp['next_school_year'] = ($t1[0] + 1)."-".($t1[1]+1);
-            $tmp['next_year'] = date("Y")+1;
+            $tmp['next_school_year'] = ($t1[0] + 1) . "-" . ($t1[1] + 1);
+            $tmp['next_year'] = date("Y") + 1;
 
             /* Offer link */
             $tmp['offer_link'] = "";
             $tmp['online_offer_last_date'] = $last_date_online_acceptance;
             $tmp['offline_offer_last_date'] = $last_date_offline_acceptance;
 
-            if(!empty($subms))
-            {
-                $tmp['offer_link'] = url('/Offers/'.$subms->offer_slug);
-                $tmp['contract_link'] = url('/Offers/Contract/Fill/'.$subms->offer_slug);
-                if($subms->last_date_online_acceptance != '')
-                {
+            if (!empty($subms)) {
+                $tmp['offer_link'] = url('/Offers/' . $subms->offer_slug);
+                $tmp['contract_link'] = url('/Offers/Contract/Fill/' . $subms->offer_slug);
+                if ($subms->last_date_online_acceptance != '') {
                     $tmp['online_offer_last_date'] = $subms->last_date_online_acceptance;
                     $tmp['offline_offer_last_date'] = $subms->last_date_offline_acceptance;
                 }
@@ -470,37 +418,37 @@ class CustomCommunicationController extends Controller
 
             /* Code for Recommendation Link */
 
-             if($status == "Missing Recommendations"){
+            if ($status == "Missing Recommendations") {
                 $tmp['recommendation_due_date'] = getDateTimeFormat($application_data1->recommendation_due_date);
 
                 $subjects = config('variables.recommendation_subject');
                 $instructions = 'Please use the following link to complete the electronic recommendation form for {name}. This electronic form must be completed by {recommendation_due_date}.<br><br>{recommendation_teacher_link}';
-                foreach($missing_recom as $mk=>$mvalue){
-                    if($mvalue != ''){
-                        $config_value = explode('.',$mvalue);
-                        $program_id = $config_value[count($config_value)-2];
+                foreach ($missing_recom as $mk => $mvalue) {
+                    if ($mvalue != '') {
+                        $config_value = explode('.', $mvalue);
+                        $program_id = $config_value[count($config_value) - 2];
                         $missingSub = $config_value[0];
 
                         $tmp['program_name'] = getProgramName($program_id);
                         $tmp['program_name_with_grade'] = getProgramName($program_id) . " - Grade " . $tmp['next_grade'];
 
 
-                        $link = url('/recommendation/')."/".$mvalue;
+                        $link = url('/recommendation/') . "/" . $mvalue;
                         $tmp['recommendation_teacher_title'] = $subjects[$missingSub];
-                        $tmp['recommendation_teacher_link'] = "<a href='".$link."'>".$link."</a>";
+                        $tmp['recommendation_teacher_link'] = "<a href='" . $link . "'>" . $link . "</a>";
                         $tmp['recommendation_links_section'] = find_replace_string($instructions, $tmp);
 
-                        $msg = find_replace_string($cdata->letter_body,$tmp);
-                        $msg = str_replace("{","",$msg);
-                        $msg = str_replace("}","",$msg);
+                        $msg = find_replace_string($cdata->letter_body, $tmp);
+                        $msg = str_replace("{", "", $msg);
+                        $msg = str_replace("}", "", $msg);
                         $tmp['letter_body'] = $msg;
                         $student_data[] = $tmp;
-                    }       
+                    }
                 }
-            }else{
-                $msg = find_replace_string($cdata->letter_body,$tmp);
-                $msg = str_replace("{","",$msg);
-                $msg = str_replace("}","",$msg);
+            } else {
+                $msg = find_replace_string($cdata->letter_body, $tmp);
+                $msg = str_replace("{", "", $msg);
+                $msg = str_replace("}", "", $msg);
                 $tmp['letter_body'] = $msg;
                 $student_data[] = $tmp;
             }
@@ -513,8 +461,7 @@ class CustomCommunicationController extends Controller
             // $student_data[] = $tmp;
         }
 
-        if($preview == true)
-        {
+        if ($preview == true) {
             $student_data = array();
             $tmp = array();
             $tmp['id'] = "9999";
@@ -541,27 +488,23 @@ class CustomCommunicationController extends Controller
 
             //$msg = strtr($cdata->letter_body,$tmp);
             $msg = $cdata->letter_body;
-           // $msg = str_replace("{","",$msg);
+            // $msg = str_replace("{","",$msg);
             //$msg = str_replace("}","",$msg);
             $tmp['letter_body'] = $msg;
             $student_data[] = $tmp;
-
         }
-        view()->share('student_data',$student_data);
+        view()->share('student_data', $student_data);
         view()->share("application_data", $application_data);
 
-        $fileName =  "CustomCommunication-".strtotime(date("Y-m-d H:i:s")) . '.pdf';
+        $fileName =  "CustomCommunication-" . strtotime(date("Y-m-d H:i:s")) . '.pdf';
         $path = "resources/assets/admin/custom_communication";
-        if($preview)
-        {
-            $pdf = PDF::loadView('CustomCommunication::letterview',['student_data','application_data']);
+        if ($preview) {
+            $pdf = PDF::loadView('CustomCommunication::letterview', ['student_data', 'application_data']);
             $fileName = "preview.pdf";
             $pdf->save($path . '/' . $fileName);
-            return response()->file($path."/".$fileName);
-        }
-        else
-        {
-            $pdf = PDF::loadView('CustomCommunication::letterview',['student_data','application_data']);
+            return response()->file($path . "/" . $fileName);
+        } else {
+            $pdf = PDF::loadView('CustomCommunication::letterview', ['student_data', 'application_data']);
             $pdf->save($path . '/' . $fileName);
 
             $data = array();
@@ -574,7 +517,6 @@ class CustomCommunicationController extends Controller
             CustomCommunicationData::create($data);
             return $pdf->download($fileName);
         }
-        
     }
 
 
@@ -588,7 +530,7 @@ class CustomCommunicationController extends Controller
 
         $last_process = ProcessSelection::where("enrollment_id", Session::get("enrollment_id"))->where("commited", "Yes")->where("application_id", $initSubmission->form_id)->orderBy("created_at", "DESC")->first();
 
-        if(!empty($last_process))
+        if (!empty($last_process))
             $last_type = $last_process->type;
         else
             $last_type = "regular";
@@ -596,13 +538,10 @@ class CustomCommunicationController extends Controller
         $online_date = "last_date_online_acceptance";
         $offline_date = "last_date_offline_acceptance";
 
-        if($last_type == "waitlist")
-        {
+        if ($last_type == "waitlist") {
             $online_date = "last_date_late_submission_online_acceptance";
             $offline_date = "last_date_late_submission_offline_acceptance";
-        }
-        elseif($last_type == "waitlist")
-        {
+        } elseif ($last_type == "waitlist") {
             $online_date = "last_date_waitlist_online_acceptance";
             $offline_date = "last_date_waitlist_offline_acceptance";
         }
@@ -610,13 +549,13 @@ class CustomCommunicationController extends Controller
 
         $last_date_online_acceptance = $last_date_offline_acceptance = "";
         $rs = DistrictConfiguration::where("name", $online_date)->where("enrollment_id", Session::get("enrollment_id"))->select("value")->first();
-        if(!empty($rs))
+        if (!empty($rs))
             $last_date_online_acceptance = getDateTimeFormat($rs->value);
         else
             $last_date_online_acceptance = "";
 
         $rs = DistrictConfiguration::where("name", $offline_date)->where("enrollment_id", Session::get("enrollment_id"))->select("value")->first();
-        if(!empty($rs))
+        if (!empty($rs))
             $last_date_offline_acceptance = getDateTimeFormat($rs->value);
         else
             $last_date_offline_acceptance = "";
@@ -624,15 +563,13 @@ class CustomCommunicationController extends Controller
         //$application_data = Application::where('district_id', Session::get('district_id'))->where("status", "Y")->first();
         $application_data = Application::join("enrollments", "enrollments.id", "application.enrollment_id")->where('application.enrollment_id', Session::get('enrollment_id'))->where('application.district_id', Session::get('district_id'))->where("application.status", "Y")->select("application.*", "enrollments.school_year")->first();
         $id = $req['id'];
-        if (isset($request->save))
-        {
+        if (isset($request->save)) {
             $data = ['letter_body' => $req['letter_body']];
             Submissions::where("id", $req['id'])->update($data);
             Session::flash("success", "Custom Communication saved successfully.");
-            return redirect('admin/Submissions/edit/'.$req['id']);
+            return redirect('admin/Submissions/edit/' . $req['id']);
         }
-        if (isset($request->preview))
-        {
+        if (isset($request->preview)) {
             $student_data = array();
             $tmp = array();
             $tmp['id'] = "9999";
@@ -658,23 +595,20 @@ class CustomCommunicationController extends Controller
 
             //$msg = strtr($cdata->letter_body,$tmp);
             $msg = $req['letter_body'];
-           // $msg = str_replace("{","",$msg);
+            // $msg = str_replace("{","",$msg);
             //$msg = str_replace("}","",$msg);
             $tmp['letter_body'] = $msg;
             $student_data[] = $tmp;
-        }
-        else
-        {
-            
+        } else {
 
-            $final_data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id","submissions.application_id")->select("submissions.*")->where('submissions.id', $id)->get();
+
+            $final_data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id", "submissions.application_id")->select("submissions.*")->where('submissions.id', $id)->get();
 
             $data = ['letter_body' => $req['letter_body']];
             Submissions::where("id", $req['id'])->update($data);
 
             $student_data = array();
-            foreach($final_data as $key=>$value)
-            {
+            foreach ($final_data as $key => $value) {
                 //$application = Application::where('id', $value->application_id)->first();
                 $application_data1 = Application::join("enrollments", "enrollments.id", "application.enrollment_id")->where('application.district_id', Session::get('district_id'))->where("application.status", "Y")->where("application.id", $value->application_id)->select("application.*", "enrollments.school_year")->first();
 
@@ -684,7 +618,7 @@ class CustomCommunicationController extends Controller
                 $tmp['id'] = $value->id;
                 $tmp['student_id'] = $value->student_id;
                 $tmp['confirmation_no'] = $value->confirmation_no;
-                $tmp['name'] = $value->first_name." ".$value->last_name;
+                $tmp['name'] = $value->first_name . " " . $value->last_name;
                 $tmp['grade'] = $tmp['next_grade'] = $value->next_grade;
                 $tmp['current_grade'] = $value->current_grade;
                 $tmp['current_school'] = $value->current_school;
@@ -693,23 +627,23 @@ class CustomCommunicationController extends Controller
                 $tmp['first_choice'] = getProgramName($value->first_choice_program_id);
                 $tmp['second_choice'] = getProgramName($value->second_choice_program_id);
                 $tmp['birth_date'] = getDateFormat($value->birthday);
-                $tmp['student_name'] = $value->first_name." ".$value->last_name;
-                $tmp['parent_name'] = $value->parent_first_name." ".$value->parent_last_name;
+                $tmp['student_name'] = $value->first_name . " " . $value->last_name;
+                $tmp['parent_name'] = $value->parent_first_name . " " . $value->parent_last_name;
                 $tmp['parent_email'] = $value->parent_email;
                 $tmp['student_id'] = $value->student_id;
                 $tmp['submission_date'] = getDateTimeFormat($value->created_at);
                 $tmp['transcript_due_date'] = getDateTimeFormat($application_data1->transcript_due_date);
                 $tmp['application_url'] = url('/');
-                $tmp['parent_grade_cdi_upload_link'] = url('/upload/'.$value->application_id.'/grade');
-                $tmp['parent_address'] = $value->address."<br>". $value->city.", ".$value->state." ".$value->zip;
+                $tmp['parent_grade_cdi_upload_link'] = url('/upload/' . $value->application_id . '/grade');
+                $tmp['parent_address'] = $value->address . "<br>" . $value->city . ", " . $value->state . " " . $value->zip;
                 $tmp['program_name'] = getProgramName($value->first_choice_program_id);
                 $tmp['program_name_with_grade'] = getProgramName($value->first_choice_program_id) . " - Grade " . $tmp['next_grade'];
 
                 $tmp['school_year'] = $application_data1->school_year;
                 $tmp['enrollment_period'] = $tmp['school_year'];
                 $t1 = explode("-", $tmp['school_year']);
-                $tmp['next_school_year'] = ($t1[0] + 1)."-".($t1[1]+1);
-                $tmp['next_year'] = date("Y")+1;
+                $tmp['next_school_year'] = ($t1[0] + 1) . "-" . ($t1[1] + 1);
+                $tmp['next_year'] = date("Y") + 1;
 
                 $program_name = "";
                 $program_name_with_grade = "";
@@ -727,76 +661,54 @@ class CustomCommunicationController extends Controller
 
 
 
-                if($value->submission_status != "Denied due to Incomplete Records" && $value->submission_status != "Denied due to Ineligibility")
-                {
-                    if(!empty($subms))
-                    {
-                        if($subms->first_choice_final_status == "Offered")
-                        {
+                if ($value->submission_status != "Denied due to Incomplete Records" && $value->submission_status != "Denied due to Ineligibility") {
+                    if (!empty($subms)) {
+                        if ($subms->first_choice_final_status == "Offered") {
                             $program_name = getProgramName($value->first_choice_program_id);
-                            $program_name_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
+                            $program_name_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                             $offer_program = $program_name;
                             $offer_program_with_grade = $program_name_with_grade;
 
-                            if($subms->second_choice_final_status == "Waitlisted")
-                            {
+                            if ($subms->second_choice_final_status == "Waitlisted") {
                                 $waitlist_program = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
+                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                             }
-                        }
-                        elseif($subms->second_choice_final_status == "Offered")
-                        {
+                        } elseif ($subms->second_choice_final_status == "Offered") {
                             $program_name = getProgramName($value->second_choice_program_id);
-                            $program_name_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
+                            $program_name_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                             $offer_program = $program_name;
                             $offer_program_with_grade = $program_name_with_grade;
 
-                            if($subms->first_choice_final_status == "Waitlisted")
-                            {
+                            if ($subms->first_choice_final_status == "Waitlisted") {
                                 $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
+                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                             }
+                        } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted") {
+                            $waitlist_program = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
 
+                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_2 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                        } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending") {
+                            $waitlist_program = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                        } elseif ($subms->second_choice_final_status == "Waitlisted") {
+                            $waitlist_program = getProgramName($value->second_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_2 = getProgramName($value->second_choice_program_id);
+                            $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                         }
-                        elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted")
-                        {
-                                $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_2 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                        }
-                        elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending")
-                        {
-                                $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-                        }
-                        elseif($subms->second_choice_final_status == "Waitlisted")
-                        {
-                                $waitlist_program = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_2 = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                        }
-
-
-
                     }
                 }
 
-                if($program_name != "")
-                {
+                if ($program_name != "") {
                     $tmp['program_name'] = $program_name;
                     $tmp['program_name_with_grade'] = $program_name_with_grade;
                 }
@@ -814,13 +726,11 @@ class CustomCommunicationController extends Controller
                 $tmp['online_offer_last_date'] = $last_date_online_acceptance;
                 $tmp['offline_offer_last_date'] = $last_date_offline_acceptance;
 
-                if(!empty($subms))
-                {
-                    $tmp['offer_link'] = url('/Offers/'.$subms->offer_slug);
-                    $tmp['contract_link'] = url('/Offers/Contract/Fill/'.$subms->offer_slug);
+                if (!empty($subms)) {
+                    $tmp['offer_link'] = url('/Offers/' . $subms->offer_slug);
+                    $tmp['contract_link'] = url('/Offers/Contract/Fill/' . $subms->offer_slug);
 
-                    if($subms->last_date_online_acceptance != '')
-                    {
+                    if ($subms->last_date_online_acceptance != '') {
                         $tmp['online_offer_last_date'] = $subms->last_date_online_acceptance;
                         $tmp['offline_offer_last_date'] = $subms->last_date_offline_acceptance;
                     }
@@ -828,28 +738,25 @@ class CustomCommunicationController extends Controller
 
 
                 $tmp['signature'] = get_signature('letter_signature');
-                $msg = find_replace_string($req['letter_body'],$tmp);
-                $msg = str_replace("{","",$msg);
-                $msg = str_replace("}","",$msg);
+                $msg = find_replace_string($req['letter_body'], $tmp);
+                $msg = str_replace("{", "", $msg);
+                $msg = str_replace("}", "", $msg);
                 $tmp['letter_body'] = $msg;
                 $student_data[] = $tmp;
             }
         }
-        view()->share('student_data',$student_data);
+        view()->share('student_data', $student_data);
         view()->share("application_data", $application_data);
 
-        $fileName =  "CustomCommunication-".strtotime(date("Y-m-d H:i:s")) . '.pdf';
+        $fileName =  "CustomCommunication-" . strtotime(date("Y-m-d H:i:s")) . '.pdf';
         $path = "resources/assets/admin/custom_communication";
-        if (isset($request->preview))
-        {
-            $pdf = PDF::loadView('CustomCommunication::letterview',['student_data','application_data']);
+        if (isset($request->preview)) {
+            $pdf = Pdf::loadView('CustomCommunication::letterview', ['student_data', 'application_data']);
             $fileName = "preview.pdf";
             $pdf->save($path . '/' . $fileName);
-            return response()->file($path."/".$fileName);
-        }
-        else
-        {
-            $pdf = PDF::loadView('CustomCommunication::letterview',['student_data','application_data']);
+            return response()->file($path . "/" . $fileName);
+        } else {
+            $pdf = PDF::loadView('CustomCommunication::letterview', ['student_data', 'application_data']);
             $pdf->save($path . '/' . $fileName);
 
             $data = array();
@@ -862,10 +769,9 @@ class CustomCommunicationController extends Controller
             CustomCommunicationData::create($data);
             return $pdf->download($fileName);
         }
-        
     }
 
-    public function send_email_now($id, $preview=false)
+    public function send_email_now($id, $preview = false)
     {
         $cdata = CustomCommunication::where("id", $id)->first();
         $program_id = $cdata->program;
@@ -873,31 +779,28 @@ class CustomCommunicationController extends Controller
         $status = $cdata->submission_status;
         $grade = $cdata->grade;
 
-        
+
 
 
         //$application_data = Application::where('district_id', Session::get('district_id'))->where("status", "Y")->first();
         $application_data = Application::join("enrollments", "enrollments.id", "application.enrollment_id")->where('application.enrollment_id', Session::get('enrollment_id'))->where('application.district_id', Session::get('district_id'))->where("application.status", "Y")->select("application.*", "enrollments.school_year")->first();
 
-        $data = Submissions::where("submissions.district_id", Session::get("district_id"))->where("submissions.enrollment_id", Session::get("enrollment_id"))->join("application", "application.id","submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
-        if($program_id != 0)
-        {
-            $data->where(function($q) use ($program_id) {
+        $data = Submissions::where("submissions.district_id", Session::get("district_id"))->where("submissions.enrollment_id", Session::get("enrollment_id"))->join("application", "application.id", "submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
+        if ($program_id != 0) {
+            $data->where(function ($q) use ($program_id) {
                 $q->where("first_choice_program_id", $program_id)
-                  ->orWhere("second_choice_program_id", $program_id)->get();
-                });
+                    ->orWhere("second_choice_program_id", $program_id)->get();
+            });
         }
-        if($grade != 'All')
-        {
+        if ($grade != 'All') {
             $data->where('next_grade', $grade);
         }
-        if($status != 'All' && $status != "Missing Writing Samples")
-        {
-            if($status == "Offer Accepted and Contract Pending"){
+        if ($status != 'All' && $status != "Missing Writing Samples") {
+            if ($status == "Offer Accepted and Contract Pending") {
                 $data->where('submission_status', "Offered and Accepted");
-            }elseif($status == "Missing Recommendations"){
+            } elseif ($status == "Missing Recommendations") {
                 $data->whereIn('submission_status', array('Active', 'Pending'));
-            }else{
+            } else {
                 $data->where('submission_status', $status);
             }
         }
@@ -905,8 +808,7 @@ class CustomCommunicationController extends Controller
 
         $student_data = array();
 
-        if($preview == true)
-        {
+        if ($preview == true) {
             $tmp = array();
             $tmp['id'] = "9999";
             $tmp['student_id'] = "1234567890";
@@ -930,30 +832,27 @@ class CustomCommunicationController extends Controller
             $tmp['signature'] = get_signature('email_signature');
 
 
-            $msg = find_replace_string($cdata->mail_body,$tmp);
-            $msg = str_replace("{","",$msg);
-            $msg = str_replace("}","",$msg);
+            $msg = find_replace_string($cdata->mail_body, $tmp);
+            $msg = str_replace("{", "", $msg);
+            $msg = str_replace("}", "", $msg);
             $msg = $cdata->mail_body;
             $tmp['email_text'] = $msg;
             $tmp['logo'] = getDistrictLogo();
 
 
-            $msg = find_replace_string($cdata->mail_subject,$tmp);
-            $msg = str_replace("{","",$msg);
-            $msg = str_replace("}","",$msg);
+            $msg = find_replace_string($cdata->mail_subject, $tmp);
+            $msg = str_replace("{", "", $msg);
+            $msg = str_replace("}", "", $msg);
             $tmp['subject'] = $msg;
             $data = $tmp;
-            
+
             return view("emails.index", compact('data'));
-        }
-        else
-        {
-            foreach($final_data as $key=>$value)
-            {
+        } else {
+            foreach ($final_data as $key => $value) {
 
                 $last_process = ProcessSelection::where("enrollment_id", $value->enrollment_id)->where("commited", "Yes")->where("application_id", $value->form_id)->orderBy("created_at", "DESC")->first();
 
-                if(!empty($last_process))
+                if (!empty($last_process))
                     $last_type = $last_process->type;
                 else
                     $last_type = "regular";
@@ -961,13 +860,10 @@ class CustomCommunicationController extends Controller
                 $online_date = "last_date_online_acceptance";
                 $offline_date = "last_date_offline_acceptance";
 
-                if($last_type == "waitlist")
-                {
+                if ($last_type == "waitlist") {
                     $online_date = "last_date_late_submission_online_acceptance";
                     $offline_date = "last_date_late_submission_offline_acceptance";
-                }
-                elseif($last_type == "waitlist")
-                {
+                } elseif ($last_type == "waitlist") {
                     $online_date = "last_date_waitlist_online_acceptance";
                     $offline_date = "last_date_waitlist_offline_acceptance";
                 }
@@ -975,13 +871,13 @@ class CustomCommunicationController extends Controller
 
                 $last_date_online_acceptance = $last_date_offline_acceptance = "";
                 $rs = DistrictConfiguration::where("name", $online_date)->where("enrollment_id", Session::get("enrollment_id"))->select("value")->first();
-                if(!empty($rs))
+                if (!empty($rs))
                     $last_date_online_acceptance = getDateTimeFormat($rs->value);
                 else
                     $last_date_online_acceptance = "";
 
                 $rs = DistrictConfiguration::where("name", $offline_date)->where("enrollment_id", Session::get("enrollment_id"))->select("value")->first();
-                if(!empty($rs))
+                if (!empty($rs))
                     $last_date_offline_acceptance = getDateTimeFormat($rs->value);
                 else
                     $last_date_offline_acceptance = "";
@@ -989,76 +885,70 @@ class CustomCommunicationController extends Controller
                 $application_data1 = Application::join("enrollments", "enrollments.id", "application.enrollment_id")->where('application.district_id', Session::get('district_id'))->where("application.status", "Y")->where("application.id", $value->application_id)->select("application.*", "enrollments.school_year")->first();
 
                 $subms = SubmissionsFinalStatus::where("submission_id", $value->id)->first();
-                $subms1 = SubmissionsWaitlistFinalStatus::where("submission_id", $value->id)->where(function($q) {
+                $subms1 = SubmissionsWaitlistFinalStatus::where("submission_id", $value->id)->where(function ($q) {
                     $q->where("first_offer_status", "Accepted")->orWhere("second_offer_status", "Accepted")->get();
                 })->first();
 
-                if($status == "Missing Recommendations"){
+                if ($status == "Missing Recommendations") {
                     $recomm_programs = ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->where("eligibility_template.name", "Recommendation Form")->join("program", "program.id", "program_eligibility.program_id")->where("program.enrollment_id", $enrollment_id)->pluck('program_eligibility.program_id')->all();
 
-                    if(in_array($value->first_choice_program_id, $recomm_programs) || in_array($value->second_choice_program_id, $recomm_programs)){
-                        $recommendation = SubmissionData::where('submission_id',$value->id)->where('config_name','LIKE','recommendation%')->pluck('config_value')->toArray();
+                    if (in_array($value->first_choice_program_id, $recomm_programs) || in_array($value->second_choice_program_id, $recomm_programs)) {
+                        $recommendation = SubmissionData::where('submission_id', $value->id)->where('config_name', 'LIKE', 'recommendation%')->pluck('config_value')->toArray();
 
-                        if(isset($recommendation) && !empty($recommendation)){
-                            $submitted_recom = SubmissionRecommendation::where('submission_id',$value->id)->pluck('config_value')->toArray();
+                        if (isset($recommendation) && !empty($recommendation)) {
+                            $submitted_recom = SubmissionRecommendation::where('submission_id', $value->id)->pluck('config_value')->toArray();
                             $missing_recom = array_diff($recommendation, $submitted_recom);
 
-                            if(empty($missing_recom)){
+                            if (empty($missing_recom)) {
                                 // dd($value->id, $missing_recom, !isset($missing_recom));
                                 continue;
                             }
-                        }else{
+                        } else {
                             continue;
                         }
-
-                    }else{
+                    } else {
                         continue;
                     }
-                }elseif($status == "Missing Writing Samples"){
+                } elseif ($status == "Missing Writing Samples") {
                     $writing_prompt_programs = ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->where("eligibility_template.name", "Writing Prompt")->pluck('program_id')->all();
                     $choice_writing_prompt = [];
                     $foption = "";
-                    if(in_array($value->first_choice_program_id, $writing_prompt_programs)){
+                    if (in_array($value->first_choice_program_id, $writing_prompt_programs)) {
                         $choice_writing_prompt[] = $value->first_choice_program_id;
                         $foption = "first";
-                    } 
+                    }
 
-                    if(in_array($value->second_choice_program_id, $writing_prompt_programs)){
+                    if (in_array($value->second_choice_program_id, $writing_prompt_programs)) {
                         $choice_writing_prompt[] = $value->second_choice_program_id;
                         $foption = "second";
                     }
 
-                    if(!empty($choice_writing_prompt)){
+                    if (!empty($choice_writing_prompt)) {
                         $writing_prompt_data = WritingPrompt::where('submission_id', $value->id)->whereIn('program_id', $choice_writing_prompt)->first();
 
-                        if(isset($writing_prompt_data) && !empty($writing_prompt_data)){
+                        if (isset($writing_prompt_data) && !empty($writing_prompt_data)) {
                             continue;
-                        }else{
-                            
+                        } else {
+
                             $tmp['writing_prompt_due_date'] = getDateTimeFormat($application_data1->writing_prompt_due_date);
-                            $rsT = DB::table("submission_data")->where("submission_id", $value->id)->where("config_name", "wp_".$foption."_choice_link")->first();
-                            if(!empty($rsT))
-                                $tmp['writing_prompt_link'] = url('/WritingPrompt/')."/".$rsT->config_value;
+                            $rsT = DB::table("submission_data")->where("submission_id", $value->id)->where("config_name", "wp_" . $foption . "_choice_link")->first();
+                            if (!empty($rsT))
+                                $tmp['writing_prompt_link'] = url('/WritingPrompt/') . "/" . $rsT->config_value;
                             else
                                 $tmp['writing_prompt_link'] = '';
-
-                            
-                            
                         }
-                    }else{
+                    } else {
                         continue;
                     }
-
-                    
                 }
 
-                
+
 
                 $tmp = array();
                 $tmp['id'] = $value->id;
                 $tmp['student_id'] = $value->student_id;
                 $tmp['confirmation_no'] = $value->confirmation_no;
-                $tmp['name'] = $value->first_name." ".$value->last_name;
+                $tmp['name'] = $value->first_name . " " . $value->last_name;
                 $tmp['grade'] = $tmp['next_grade'] = $value->next_grade;
                 $tmp['current_grade'] = $value->current_grade;
                 $tmp['current_school'] = $value->current_school;
@@ -1067,8 +957,8 @@ class CustomCommunicationController extends Controller
                 $tmp['first_choice'] = getProgramName($value->first_choice_program_id);
                 $tmp['second_choice'] = getProgramName($value->second_choice_program_id);
                 $tmp['birth_date'] = getDateFormat($value->birthday);
-                $tmp['student_name'] = $value->first_name." ".$value->last_name;
-                $tmp['parent_name'] = $value->parent_first_name." ".$value->parent_last_name;
+                $tmp['student_name'] = $value->first_name . " " . $value->last_name;
+                $tmp['parent_name'] = $value->parent_first_name . " " . $value->parent_last_name;
                 $tmp['parent_email'] = $value->parent_email;
                 $tmp['student_id'] = $value->student_id;
                 $tmp['parent_email'] = $value->parent_email;
@@ -1078,7 +968,7 @@ class CustomCommunicationController extends Controller
                 $tmp['application_url'] = url('/');
                 $tmp['signature'] = get_signature('email_signature');
 
-                $tmp['parent_grade_cdi_upload_link'] = url('/upload/'.$value->application_id.'/grade');
+                $tmp['parent_grade_cdi_upload_link'] = url('/upload/' . $value->application_id . '/grade');
 
                 $tmp['program_name'] = getProgramName($value->first_choice_program_id);
                 $tmp['program_name_with_grade'] = getProgramName($value->first_choice_program_id) . " - Grade " . $tmp['next_grade'];
@@ -1086,9 +976,9 @@ class CustomCommunicationController extends Controller
                 $tmp['school_year'] = $application_data1->school_year;
                 $tmp['enrollment_period'] = $tmp['school_year'];
                 $t1 = explode("-", $tmp['school_year']);
-                $tmp['next_school_year'] = ($t1[0] + 1)."-".($t1[1]+1);
-                $tmp['next_year'] = date("Y")+1;
-                $tmp['parent_address'] = $value->address."<br>". $value->city.", ".$value->state." ".$value->zip;
+                $tmp['next_school_year'] = ($t1[0] + 1) . "-" . ($t1[1] + 1);
+                $tmp['next_year'] = date("Y") + 1;
+                $tmp['parent_address'] = $value->address . "<br>" . $value->city . ", " . $value->state . " " . $value->zip;
                 /* Offer link */
                 $program_name = "";
                 $program_name_with_grade = "";
@@ -1106,76 +996,54 @@ class CustomCommunicationController extends Controller
 
 
 
-                if($status != "Denied due to Incomplete Records" && $status != "Denied due to Ineligibility")
-                {
-                    if(!empty($subms))
-                    {
-                        if($subms->first_choice_final_status == "Offered")
-                        {
+                if ($status != "Denied due to Incomplete Records" && $status != "Denied due to Ineligibility") {
+                    if (!empty($subms)) {
+                        if ($subms->first_choice_final_status == "Offered") {
                             $program_name = getProgramName($value->first_choice_program_id);
-                            $program_name_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
+                            $program_name_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                             $offer_program = $program_name;
                             $offer_program_with_grade = $program_name_with_grade;
 
-                            if($subms->second_choice_final_status == "Waitlisted")
-                            {
+                            if ($subms->second_choice_final_status == "Waitlisted") {
                                 $waitlist_program = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
+                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                             }
-                        }
-                        elseif($subms->second_choice_final_status == "Offered")
-                        {
+                        } elseif ($subms->second_choice_final_status == "Offered") {
                             $program_name = getProgramName($value->second_choice_program_id);
-                            $program_name_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
+                            $program_name_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                             $offer_program = $program_name;
                             $offer_program_with_grade = $program_name_with_grade;
 
-                            if($subms->first_choice_final_status == "Waitlisted")
-                            {
+                            if ($subms->first_choice_final_status == "Waitlisted") {
                                 $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
+                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                             }
+                        } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted") {
+                            $waitlist_program = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
 
+                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_2 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                        } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending") {
+                            $waitlist_program = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                        } elseif ($subms->second_choice_final_status == "Waitlisted") {
+                            $waitlist_program = getProgramName($value->second_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_2 = getProgramName($value->second_choice_program_id);
+                            $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                         }
-                        elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted")
-                        {
-                                $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_2 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                        }
-                        elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending")
-                        {
-                                $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-                        }
-                        elseif($subms->second_choice_final_status == "Waitlisted")
-                        {
-                                $waitlist_program = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_2 = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                        }
-
-
-
                     }
                 }
 
-                if($program_name != "")
-                {
+                if ($program_name != "") {
                     $tmp['program_name'] = $program_name;
                     $tmp['program_name_with_grade'] = $program_name_with_grade;
                 }
@@ -1193,13 +1061,11 @@ class CustomCommunicationController extends Controller
                 $tmp['online_offer_last_date'] = $last_date_online_acceptance;
                 $tmp['offline_offer_last_date'] = $last_date_offline_acceptance;
 
-                if(!empty($subms))
-                {
-                    $tmp['offer_link'] = url('/Offers/'.$subms->offer_slug);
-                    $tmp['contract_link'] = url('/Offers/Contract/Fill/'.$subms->offer_slug);
+                if (!empty($subms)) {
+                    $tmp['offer_link'] = url('/Offers/' . $subms->offer_slug);
+                    $tmp['contract_link'] = url('/Offers/Contract/Fill/' . $subms->offer_slug);
 
-                    if($subms->last_date_online_acceptance != '')
-                    {
+                    if ($subms->last_date_online_acceptance != '') {
                         $tmp['online_offer_last_date'] = $subms->last_date_online_acceptance;
                         $tmp['offline_offer_last_date'] = $subms->last_date_offline_acceptance;
                     }
@@ -1208,63 +1074,61 @@ class CustomCommunicationController extends Controller
 
                 /* Code for Recommendation Link */
 
-                 if($status == "Missing Recommendations"){
+                if ($status == "Missing Recommendations") {
                     $tmp['recommendation_due_date'] = getDateTimeFormat($application_data1->recommendation_due_date);
 
                     $subjects = config('variables.recommendation_subject');
                     $instructions = 'Please use the following link to complete the electronic recommendation form for {name}. This electronic form must be completed by {recommendation_due_date}.<br><br>{recommendation_teacher_link}';
 
-                    foreach($missing_recom as $mk=>$mvalue){
-                        if($mvalue != ''){
-                            $config_value = explode('.',$mvalue);
-                            $program_id = $config_value[count($config_value)-2];
+                    foreach ($missing_recom as $mk => $mvalue) {
+                        if ($mvalue != '') {
+                            $config_value = explode('.', $mvalue);
+                            $program_id = $config_value[count($config_value) - 2];
                             $missingSub = $config_value[0];
 
                             $tmp['program_name'] = getProgramName($program_id);
                             $tmp['program_name_with_grade'] = getProgramName($program_id) . " - Grade " . $tmp['next_grade'];
 
 
-                            $link = url('/recommendation/')."/".$mvalue;
+                            $link = url('/recommendation/') . "/" . $mvalue;
                             $tmp['recommendation_teacher_title'] = $subjects[$missingSub];
-                            $tmp['recommendation_teacher_link'] = "<a href='".$link."'>".$link."</a>";
-                            $tmp['recommendation_links_section'] = find_replace_string($instructions,$tmp);
+                            $tmp['recommendation_teacher_link'] = "<a href='" . $link . "'>" . $link . "</a>";
+                            $tmp['recommendation_links_section'] = find_replace_string($instructions, $tmp);
 
-                            $msg = find_replace_string($cdata->mail_body,$tmp);
-                            $msg = str_replace("{","",$msg);
-                            $msg = str_replace("}","",$msg);
+                            $msg = find_replace_string($cdata->mail_body, $tmp);
+                            $msg = str_replace("{", "", $msg);
+                            $msg = str_replace("}", "", $msg);
                             $tmp['msg'] = $msg;
 
-                            $msg = find_replace_string($cdata->mail_subject,$tmp);
-                            $msg = str_replace("{","",$msg);
-                            $msg = str_replace("}","",$msg);
+                            $msg = find_replace_string($cdata->mail_subject, $tmp);
+                            $msg = str_replace("{", "", $msg);
+                            $msg = str_replace("}", "", $msg);
                             $tmp['subject'] = $msg;
                             $tmp['email'] = $value->parent_email;
 
                             $student_data[] = array($value->id, $tmp['name'], $tmp['parent_name'], $tmp['parent_email'], $tmp['grade']);
                             sendMail($tmp);
-                        }       
+                        }
                     }
-                }else{
-                    $msg = find_replace_string($cdata->mail_body,$tmp);
-                    $msg = str_replace("{","",$msg);
-                    $msg = str_replace("}","",$msg);
+                } else {
+                    $msg = find_replace_string($cdata->mail_body, $tmp);
+                    $msg = str_replace("{", "", $msg);
+                    $msg = str_replace("}", "", $msg);
                     $tmp['msg'] = $msg;
 
-                    $msg = find_replace_string($cdata->mail_subject,$tmp);
-                    $msg = str_replace("{","",$msg);
-                    $msg = str_replace("}","",$msg);
+                    $msg = find_replace_string($cdata->mail_subject, $tmp);
+                    $msg = str_replace("{", "", $msg);
+                    $msg = str_replace("}", "", $msg);
                     $tmp['subject'] = $msg;
-                    
+
                     $tmp['email'] = $value->parent_email;
                     $student_data[] = array($value->id, $tmp['name'], $tmp['parent_name'], $tmp['parent_email'], $tmp['grade']);
                     sendMail($tmp);
                 }
-
-                
             }
             ob_end_clean();
             ob_start();
-            $fileName =  "CustomCommunication-".strtotime(date("Y-m-d H:i:s")).".xlsx";
+            $fileName =  "CustomCommunication-" . strtotime(date("Y-m-d H:i:s")) . ".xlsx";
 
             $data = array();
             $data['template_id'] = $id;
@@ -1276,7 +1140,6 @@ class CustomCommunicationController extends Controller
 
 
             Excel::store(new CustomCommunicationEmails(collect($student_data)), $fileName, 'custom_application');
-
         }
 
 
@@ -1300,16 +1163,14 @@ class CustomCommunicationController extends Controller
         $application_data = Application::where('district_id', Session::get('district_id'))->where('enrollment_id', Session::get('enrollment_id'))->where("status", "Y")->first();
 
         $student_data = array();
-        if (isset($request->save))
-        {
+        if (isset($request->save)) {
             $data = ['email_body' => $req['mail_body'], 'email_subject' => $req['mail_subject']];
             Submissions::where("id", $req['id'])->update($data);
             Session::flash("success", "Custom Communication saved successfully.");
-            return redirect('admin/Submissions/edit/'.$req['id']);
+            return redirect('admin/Submissions/edit/' . $req['id']);
         }
 
-        if (isset($request->preview))
-        {
+        if (isset($request->preview)) {
             $tmp = array();
             $tmp['id'] = "9999";
             $tmp['student_id'] = "1234567890";
@@ -1333,32 +1194,29 @@ class CustomCommunicationController extends Controller
             $tmp['signature'] = get_signature('email_signature');
 
 
-            $msg = find_replace_string($req['mail_body'],$tmp);
-            $msg = str_replace("{","",$msg);
-            $msg = str_replace("}","",$msg);
+            $msg = find_replace_string($req['mail_body'], $tmp);
+            $msg = str_replace("{", "", $msg);
+            $msg = str_replace("}", "", $msg);
             $msg = $req['mail_body'];
             $tmp['email_text'] = $msg;
             $tmp['logo'] = getDistrictLogo();
 
 
-            $msg = find_replace_string($req['mail_subject'],$tmp);
-            $msg = str_replace("{","",$msg);
-            $msg = str_replace("}","",$msg);
+            $msg = find_replace_string($req['mail_subject'], $tmp);
+            $msg = str_replace("{", "", $msg);
+            $msg = str_replace("}", "", $msg);
             $tmp['subject'] = $msg;
             $data = $tmp;
-            
+
             return view("emails.index", compact('data'));
-        }
-        else
-        {
-            $final_data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id","submissions.application_id")->select("submissions.*")->where("submissions.id", $request['id'])->get();
+        } else {
+            $final_data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id", "submissions.application_id")->select("submissions.*")->where("submissions.id", $request['id'])->get();
 
             $data = ['email_body' => $req['mail_body'], 'email_subject' => $req['mail_subject']];
             Submissions::where("id", $req['id'])->update($data);
 
 
-            foreach($final_data as $key=>$value)
-            {
+            foreach ($final_data as $key => $value) {
                 //$application = Application::where('id', $value->application_id)->first();
                 $application_data1 = Application::join("enrollments", "enrollments.id", "application.enrollment_id")->where('application.district_id', Session::get('district_id'))->where("application.status", "Y")->where("application.id", $value->application_id)->select("application.*", "enrollments.school_year")->first();
 
@@ -1368,7 +1226,7 @@ class CustomCommunicationController extends Controller
                 $tmp['id'] = $value->id;
                 $tmp['student_id'] = $value->student_id;
                 $tmp['confirmation_no'] = $value->confirmation_no;
-                $tmp['name'] = $value->first_name." ".$value->last_name;
+                $tmp['name'] = $value->first_name . " " . $value->last_name;
                 $tmp['grade'] = $tmp['next_grade'] = $value->next_grade;
                 $tmp['current_grade'] = $value->current_grade;
                 $tmp['current_school'] = $value->current_school;
@@ -1377,8 +1235,8 @@ class CustomCommunicationController extends Controller
                 $tmp['first_choice'] = getProgramName($value->first_choice_program_id);
                 $tmp['second_choice'] = getProgramName($value->second_choice_program_id);
                 $tmp['birth_date'] = getDateFormat($value->birthday);
-                $tmp['student_name'] = $value->first_name." ".$value->last_name;
-                $tmp['parent_name'] = $value->parent_first_name." ".$value->parent_last_name;
+                $tmp['student_name'] = $value->first_name . " " . $value->last_name;
+                $tmp['parent_name'] = $value->parent_first_name . " " . $value->parent_last_name;
                 $tmp['parent_email'] = $value->parent_email;
                 $tmp['student_id'] = $value->student_id;
                 $tmp['parent_email'] = $value->parent_email;
@@ -1390,14 +1248,14 @@ class CustomCommunicationController extends Controller
 
                 $tmp['program_name'] = getProgramName($value->first_choice_program_id);
                 $tmp['program_name_with_grade'] = getProgramName($value->first_choice_program_id) . " - Grade " . $tmp['next_grade'];
-                $tmp['parent_address'] = $value->address."<br>". $value->city.", ".$value->state." ".$value->zip;
+                $tmp['parent_address'] = $value->address . "<br>" . $value->city . ", " . $value->state . " " . $value->zip;
                 $tmp['school_year'] = $application_data1->school_year;
 
-                $tmp['parent_grade_cdi_upload_link'] = url('/upload/'.$value->application_id.'/grade');
+                $tmp['parent_grade_cdi_upload_link'] = url('/upload/' . $value->application_id . '/grade');
                 $tmp['enrollment_period'] = $tmp['school_year'];
                 $t1 = explode("-", $tmp['school_year']);
-                $tmp['next_school_year'] = ($t1[0] + 1)."-".($t1[1]+1);
-                $tmp['next_year'] = date("Y")+1;
+                $tmp['next_school_year'] = ($t1[0] + 1) . "-" . ($t1[1] + 1);
+                $tmp['next_year'] = date("Y") + 1;
 
                 $program_name = "";
                 $program_name_with_grade = "";
@@ -1415,76 +1273,54 @@ class CustomCommunicationController extends Controller
 
 
 
-                if($value->submission_status != "Denied due to Incomplete Records" && $value->submission_status != "Denied due to Ineligibility")
-                {
-                    if(!empty($subms))
-                    {
-                        if($subms->first_choice_final_status == "Offered")
-                        {
+                if ($value->submission_status != "Denied due to Incomplete Records" && $value->submission_status != "Denied due to Ineligibility") {
+                    if (!empty($subms)) {
+                        if ($subms->first_choice_final_status == "Offered") {
                             $program_name = getProgramName($value->first_choice_program_id);
-                            $program_name_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
+                            $program_name_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                             $offer_program = $program_name;
                             $offer_program_with_grade = $program_name_with_grade;
 
-                            if($subms->second_choice_final_status == "Waitlisted")
-                            {
+                            if ($subms->second_choice_final_status == "Waitlisted") {
                                 $waitlist_program = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
+                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                             }
-                        }
-                        elseif($subms->second_choice_final_status == "Offered")
-                        {
+                        } elseif ($subms->second_choice_final_status == "Offered") {
                             $program_name = getProgramName($value->second_choice_program_id);
-                            $program_name_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
+                            $program_name_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                             $offer_program = $program_name;
                             $offer_program_with_grade = $program_name_with_grade;
 
-                            if($subms->first_choice_final_status == "Waitlisted")
-                            {
+                            if ($subms->first_choice_final_status == "Waitlisted") {
                                 $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
+                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
                             }
+                        } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted") {
+                            $waitlist_program = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
 
+                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_2 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                        } elseif ($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending") {
+                            $waitlist_program = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_1 = getProgramName($value->first_choice_program_id);
+                            $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id) . " - Grade " . $value->next_grade;
+                        } elseif ($subms->second_choice_final_status == "Waitlisted") {
+                            $waitlist_program = getProgramName($value->second_choice_program_id);
+                            $waitlist_program_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
+
+                            $waitlist_program_2 = getProgramName($value->second_choice_program_id);
+                            $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id) . " - Grade " . $value->next_grade;
                         }
-                        elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Waitlisted")
-                        {
-                                $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_2 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_2_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                        }
-                        elseif($subms->first_choice_final_status == "Waitlisted" && $subms->second_choice_final_status == "Pending")
-                        {
-                                $waitlist_program = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_1 = getProgramName($value->first_choice_program_id);
-                                $waitlist_program_1_with_grade = getProgramName($value->first_choice_program_id). " - Grade ".$value->next_grade;
-                        }
-                        elseif($subms->second_choice_final_status == "Waitlisted")
-                        {
-                                $waitlist_program = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                                $waitlist_program_2 = getProgramName($value->second_choice_program_id);
-                                $waitlist_program_2_with_grade = getProgramName($value->second_choice_program_id). " - Grade ".$value->next_grade;
-
-                        }
-
-
-
                     }
                 }
 
-                if($program_name != "")
-                {
+                if ($program_name != "") {
                     $tmp['program_name'] = $program_name;
                     $tmp['program_name_with_grade'] = $program_name_with_grade;
                 }
@@ -1502,13 +1338,11 @@ class CustomCommunicationController extends Controller
                 $tmp['online_offer_last_date'] = $last_date_online_acceptance;
                 $tmp['offline_offer_last_date'] = $last_date_offline_acceptance;
 
-                if(!empty($subms))
-                {
-                    $tmp['offer_link'] = url('/Offers/'.$subms->offer_slug);
-                    $tmp['contract_link'] = url('/Offers/Contract/Fill/'.$subms->offer_slug);
+                if (!empty($subms)) {
+                    $tmp['offer_link'] = url('/Offers/' . $subms->offer_slug);
+                    $tmp['contract_link'] = url('/Offers/Contract/Fill/' . $subms->offer_slug);
 
-                    if($subms->last_date_online_acceptance != '')
-                    {
+                    if ($subms->last_date_online_acceptance != '') {
                         $tmp['online_offer_last_date'] = $subms->last_date_online_acceptance;
                         $tmp['offline_offer_last_date'] = $subms->last_date_offline_acceptance;
                     }
@@ -1516,16 +1350,16 @@ class CustomCommunicationController extends Controller
 
 
 
-                $msg = find_replace_string($req['mail_body'],$tmp);
-                $msg = str_replace("{","",$msg);
-                $msg = str_replace("}","",$msg);
+                $msg = find_replace_string($req['mail_body'], $tmp);
+                $msg = str_replace("{", "", $msg);
+                $msg = str_replace("}", "", $msg);
                 $tmp['msg'] = $msg;
 
-                $msg = find_replace_string($req['mail_subject'],$tmp);
-                $msg = str_replace("{","",$msg);
-                $msg = str_replace("}","",$msg);
+                $msg = find_replace_string($req['mail_subject'], $tmp);
+                $msg = str_replace("{", "", $msg);
+                $msg = str_replace("}", "", $msg);
                 $tmp['subject'] = $msg;
-                
+
                 $tmp['email'] = $value->parent_email;
                 $student_data[] = array($value->id, $tmp['name'], $tmp['parent_name'], $tmp['parent_email'], $tmp['grade']);
 
@@ -1542,8 +1376,7 @@ class CustomCommunicationController extends Controller
 
                 sendMail($tmp);
                 Session::flash("success", "Custom Communication email sent successfully.");
-                return redirect('admin/Submissions/edit/'.$req['id']);
-
+                return redirect('admin/Submissions/edit/' . $req['id']);
             }
         }
 
@@ -1555,16 +1388,15 @@ class CustomCommunicationController extends Controller
     public function preview_email_now_individual($id)
     {
         $data1 = CustomCommunicationData::where("id", $id)->first();
-        
+
         $tmp['email_text'] = $data1->email_body;
         $tmp['logo'] = getDistrictLogo();
         $tmp['subject'] = $data1->subject;
         $data = $tmp;
-            
+
 
 
         return view("emails.index", compact('data'));
-
     }
 
     public function fetchEmails(Request $request)
@@ -1574,158 +1406,135 @@ class CustomCommunicationController extends Controller
         $status = $request->submission_status;
         $grade = $request->grade;
 
-        $data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id","submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
-        if($program_id != 0)
-        {
-            $data->where(function($q) use ($program_id) {
+        $data = Submissions::where("submissions.district_id", Session::get("district_id"))->join("application", "application.id", "submissions.application_id")->select("submissions.*")->where("application.enrollment_id", $enrollment_id);
+        if ($program_id != 0) {
+            $data->where(function ($q) use ($program_id) {
                 $q->where("first_choice_program_id", $program_id)
-                  ->orWhere("second_choice_program_id", $program_id)->get();
-                });
+                    ->orWhere("second_choice_program_id", $program_id)->get();
+            });
         }
-        if($grade != 'All')
-        {
+        if ($grade != 'All') {
             $data->where('next_grade', $grade);
         }
-        if($status != 'All' && $status != "Missing Writing Samples")
-        {
-            if($status == "Offer Accepted and Contract Pending")
-            {
+        if ($status != 'All' && $status != "Missing Writing Samples") {
+            if ($status == "Offer Accepted and Contract Pending") {
                 $data->where('submission_status', "Offered and Accepted");
-            }elseif($status == "Missing Recommendations"){
+            } elseif ($status == "Missing Recommendations") {
                 $data->whereIn('submission_status', array('Active', 'Pending'));
-            }
-            else
-            {
+            } else {
                 $data->where('submission_status', $status);
             }
         }
         $final_data = $data->get();
 
         $student_data = array();
-        foreach($final_data as $key=>$value)
-        {
+        foreach ($final_data as $key => $value) {
             $subms = SubmissionsFinalStatus::where("submission_id", $value->id)->first();
-            $subms1 = SubmissionsWaitlistFinalStatus::where("submission_id", $value->id)->where(function($q) {
+            $subms1 = SubmissionsWaitlistFinalStatus::where("submission_id", $value->id)->where(function ($q) {
                 $q->where("first_offer_status", "Accepted")->orWhere("second_offer_status", "Accepted")->get();
-                })->first();
+            })->first();
 
-            if($status == "Offer Accepted and Contract Pending")
-            {
-                if(!empty($subms1))
-                {
-                    if($subms1->contract_status != "UnSigned")
-                    {
+            if ($status == "Offer Accepted and Contract Pending") {
+                if (!empty($subms1)) {
+                    if ($subms1->contract_status != "UnSigned") {
                         continue;
                     }
                 }
-                 if(!empty($subms))
-                 {
-                    if($subms->contract_status != "UnSigned")
-                    {
+                if (!empty($subms)) {
+                    if ($subms->contract_status != "UnSigned") {
                         continue;
                     }
-                 }
-                 else
+                } else
                     continue;
-
             }
 
 
-            if($status == "Missing Recommendations"){
+            if ($status == "Missing Recommendations") {
                 $recomm_programs = ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->where("eligibility_template.name", "Recommendation Form")->join("program", "program.id", "program_eligibility.program_id")->where("program.enrollment_id", $enrollment_id)->pluck('program_eligibility.program_id')->all();
 
-                if(in_array($value->first_choice_program_id, $recomm_programs) || in_array($value->second_choice_program_id, $recomm_programs)){
-                    $recommendation = SubmissionData::where('submission_id',$value->id)->where('config_name','LIKE','recommendation%')->pluck('config_value')->toArray();
+                if (in_array($value->first_choice_program_id, $recomm_programs) || in_array($value->second_choice_program_id, $recomm_programs)) {
+                    $recommendation = SubmissionData::where('submission_id', $value->id)->where('config_name', 'LIKE', 'recommendation%')->pluck('config_value')->toArray();
 
-                    if(isset($recommendation) && !empty($recommendation)){
-                        $submitted_recom = SubmissionRecommendation::where('submission_id',$value->id)->pluck('config_value')->toArray();
+                    if (isset($recommendation) && !empty($recommendation)) {
+                        $submitted_recom = SubmissionRecommendation::where('submission_id', $value->id)->pluck('config_value')->toArray();
                         $missing_recom = array_diff($recommendation, $submitted_recom);
 
-                        if(empty($missing_recom)){
+                        if (empty($missing_recom)) {
                             // dd($value->id, $missing_recom, !isset($missing_recom));
                             continue;
-                        }
-                        else
-                        {
-                            foreach($missing_recom as $mk=>$mvalue){
-                                    if($mvalue != ''){
-                                        $config_value = explode('.',$mvalue);
-                                        $program_id = $config_value[count($config_value)-2];
-                                        $missingSub = $config_value[0];
+                        } else {
+                            foreach ($missing_recom as $mk => $mvalue) {
+                                if ($mvalue != '') {
+                                    $config_value = explode('.', $mvalue);
+                                    $program_id = $config_value[count($config_value) - 2];
+                                    $missingSub = $config_value[0];
 
-                                        $recommendation_links[$missingSub] = $mvalue;
+                                    $recommendation_links[$missingSub] = $mvalue;
 
-                                       
-                                        $tmp = array();
-                                        $tmp['id'] = $value->id;
-                                        $tmp['student_name'] = $value->first_name." ".$value->last_name;
-                                        $tmp['grade'] = $value->next_grade;
-                                        $tmp['parent_email'] = $value->parent_email;
-                                        $tmp['parent_name'] = $value->parent_first_name." ".$value->parent_last_name;
-                                        $student_data[] = $tmp;
-                                    
-                                        
 
-                                    }
+                                    $tmp = array();
+                                    $tmp['id'] = $value->id;
+                                    $tmp['student_name'] = $value->first_name . " " . $value->last_name;
+                                    $tmp['grade'] = $value->next_grade;
+                                    $tmp['parent_email'] = $value->parent_email;
+                                    $tmp['parent_name'] = $value->parent_first_name . " " . $value->parent_last_name;
+                                    $student_data[] = $tmp;
                                 }
+                            }
                         }
-                    }else{
+                    } else {
                         continue;
                     }
-
-                }else{
+                } else {
                     continue;
                 }
-            }elseif($status == "Missing Writing Samples"){
+            } elseif ($status == "Missing Writing Samples") {
                 $writing_prompt_programs = ProgramEligibility::join("eligibility_template", "eligibility_template.id", "program_eligibility.eligibility_type")->where("eligibility_template.name", "Writing Prompt")->pluck('program_id')->all();
                 $choice_writing_prompt = [];
 
-                if(in_array($value->first_choice_program_id, $writing_prompt_programs)){
+                if (in_array($value->first_choice_program_id, $writing_prompt_programs)) {
                     $choice_writing_prompt[] = $value->first_choice_program_id;
-                } 
+                }
 
-                if(in_array($value->second_choice_program_id, $writing_prompt_programs)){
+                if (in_array($value->second_choice_program_id, $writing_prompt_programs)) {
                     $choice_writing_prompt[] = $value->second_choice_program_id;
                 }
 
-                if(!empty($choice_writing_prompt)){
+                if (!empty($choice_writing_prompt)) {
                     $writing_prompt_data = WritingPrompt::where('submission_id', $value->id)->whereIn('program_id', $choice_writing_prompt)->first();
 
-                    if(isset($writing_prompt_data) && !empty($writing_prompt_data)){
+                    if (isset($writing_prompt_data) && !empty($writing_prompt_data)) {
                         continue;
                     }
-                }else{
+                } else {
                     continue;
                 }
                 $tmp = array();
                 $tmp['id'] = $value->id;
-                $tmp['student_name'] = $value->first_name." ".$value->last_name;
+                $tmp['student_name'] = $value->first_name . " " . $value->last_name;
                 $tmp['grade'] = $value->next_grade;
-                $tmp['parent_name'] = $value->parent_first_name." ".$value->parent_last_name;
+                $tmp['parent_name'] = $value->parent_first_name . " " . $value->parent_last_name;
                 $tmp['parent_email'] = $value->parent_email;
                 $student_data[] = $tmp;
-            }
-            else
-            {
+            } else {
                 $tmp = array();
                 $tmp['id'] = $value->id;
-                $tmp['student_name'] = $value->first_name." ".$value->last_name;
+                $tmp['student_name'] = $value->first_name . " " . $value->last_name;
                 $tmp['grade'] = $value->next_grade;
-                $tmp['parent_name'] = $value->parent_first_name." ".$value->parent_last_name;
+                $tmp['parent_name'] = $value->parent_first_name . " " . $value->parent_last_name;
                 $tmp['parent_email'] = $value->parent_email;
                 $student_data[] = $tmp;
             }
         }
         return json_encode($student_data);
     }
-   
+
 
     public function existingData($type, $template_id)
     {
-        $data = CustomCommunicationData::where("template_id", $template_id)->orderByDesc("custom_communication_data.created_at")->join("custom_communication", "custom_communication.id", "custom_communication_data.template_id")->join('enrollments', 'enrollments.id', 'custom_communication.enrollment_id')->select('custom_communication_data.*', 'custom_communication.program', 'custom_communication.program', 'custom_communication.enrollment_id', 'custom_communication.grade', 'custom_communication.submission_status', 'custom_communication.template_name','enrollments.school_year')->where('type', $type)->limit(10)->get();
+        $data = CustomCommunicationData::where("template_id", $template_id)->orderByDesc("custom_communication_data.created_at")->join("custom_communication", "custom_communication.id", "custom_communication_data.template_id")->join('enrollments', 'enrollments.id', 'custom_communication.enrollment_id')->select('custom_communication_data.*', 'custom_communication.program', 'custom_communication.program', 'custom_communication.enrollment_id', 'custom_communication.grade', 'custom_communication.submission_status', 'custom_communication.template_name', 'enrollments.school_year')->where('type', $type)->limit(10)->get();
         $download_data = array();
-        foreach($data as $key=>$value)
-        {
+        foreach ($data as $key => $value) {
             $tmp = array();
             $tmp['id'] = $value->id;
             $tmp['template_name'] = $value->template_name;
@@ -1736,48 +1545,40 @@ class CustomCommunicationController extends Controller
             $tmp['total_count'] = $value->total_count;
             $tmp['file_name'] = $value->file_name;
             $tmp['created_at'] = getDateTimeFormat($value->created_at);
-            if($value->status == '')
+            if ($value->status == '')
                 $tmp['status'] = $value->submission_status;
             else
                 $tmp['status'] = $value->status;
             $download_data[] = $tmp;
         }
-        return view("CustomCommunication::generated", compact("download_data","template_id","type"));
+        return view("CustomCommunication::generated", compact("download_data", "template_id", "type"));
     }
 
     public function downloadFile($id)
     {
         $data = CustomCommunicationData::where("id", $id)->first();
-        if(!empty($data))
-        {
-            $file_path = 'resources/assets/admin/custom_communication/'.$data->file_name;
+        if (!empty($data)) {
+            $file_path = 'resources/assets/admin/custom_communication/' . $data->file_name;
 
-            if($data->type=="Email")
-            {
+            if ($data->type == "Email") {
                 $headers = array(
-                  'Content-Type: application/vnd.openxmlformats-officedocument',
+                    'Content-Type: application/vnd.openxmlformats-officedocument',
                 );
-            }
-            else
-            {
+            } else {
                 $headers = array(
-                  'Content-Type: application/pdf',
+                    'Content-Type: application/pdf',
                 );
             }
             return Response::download($file_path, $data->file_name, $headers);
         }
     }
 
-    
-
     public function status(Request $request)
     {
-        $result=CustomCommunication::where('id',$request->id)->update(['status'=> $request->status]);
-        if(isset($result))
-        {
+        $result = CustomCommunication::where('id', $request->id)->update(['status' => $request->status]);
+        if (isset($result)) {
             return json_encode(true);
-        }
-        else {
+        } else {
             return json_encode(false);
         }
     }
@@ -1791,5 +1592,4 @@ class CustomCommunicationController extends Controller
     {
         return $this->send_email_now($template_id, true);
     }
-
 }

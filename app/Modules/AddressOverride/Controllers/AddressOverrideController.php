@@ -8,6 +8,7 @@ use App\Modules\Student\Models\Student;
 use Illuminate\Support\Facades\Validator;
 use App\Modules\AddressOverride\Models\AddressOverride;
 use App\Modules\School\Models\School;
+use Illuminate\Support\Facades\Auth;
 
 class AddressOverrideController extends Controller
 {
@@ -53,7 +54,7 @@ class AddressOverrideController extends Controller
         if ($validator->fails()) {
             return 'false';
         }
-        $user_id = \Auth::user()->id;
+        $user_id = Auth::user()->id;
         $key_data = [
             'state_id' => $request->id,
             'district_id' => session('district_id'),

@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 Route::group(['prefix'=>'admin/Form' ,'module' => 'Form', 'middleware' => ['web','auth','super'], 'namespace' => 'App\Modules\Form\Controllers'], function() {
 
     Route::get('/', 'FormController@index');

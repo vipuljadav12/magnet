@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 Route::group(['prefix' => 'admin/LateSubmission','module' => 'LateSubmission', 'middleware' => ['web','auth'], 'namespace' => 'App\Modules\LateSubmission\Controllers'], function() {
 
     Route::post("/Program/Swing/{application_id}/store", 'LateSubmissionController@saveSwingData');    

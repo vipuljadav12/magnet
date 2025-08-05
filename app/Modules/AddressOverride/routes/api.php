@@ -1,7 +1,7 @@
 <?php
 
-Route::group(['module' => 'AddressOverwrite', 'middleware' => ['api'], 'namespace' => 'App\Modules\AddressOverwrite\Controllers'], function() {
+use Illuminate\Support\Facades\Route;
 
-    Route::resource('AddressOverwrite', 'AddressOverwriteController');
-
+Route::group(['module' => 'AddressOverride', 'middleware' => ['api'], 'namespace' => 'App\Modules\AddressOverride\Controllers'], function () {
+    Route::resource('AddressOverwrite', 'AddressOverrideController');
 });
