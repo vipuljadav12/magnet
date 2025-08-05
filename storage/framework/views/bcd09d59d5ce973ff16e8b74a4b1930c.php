@@ -1,9 +1,10 @@
-@extends('layouts.admin.app')
-@section('title')
-	Add Application Dates | {{config('APP_NAME',env("APP_NAME"))}}
-@endsection
 
-@section('content')
+<?php $__env->startSection('title'); ?>
+	Add Application Dates | <?php echo e(config('APP_NAME',env("APP_NAME"))); ?>
+
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('content'); ?>
 <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
 <div class="card shadow">
@@ -12,13 +13,14 @@
             Add Application Dates
         </div>
         <div class="">
-            <a href="{{ url('admin/Application') }}" class="btn btn-sm btn-secondary" title="Go Back">Go Back</a>
-            {{-- <a href="{{ url('admin/Application/trash') }}" class="btn btn-sm btn-danger" title="Trash">Trash</a> --}}
+            <a href="<?php echo e(url('admin/Application')); ?>" class="btn btn-sm btn-secondary" title="Go Back">Go Back</a>
+            
         </div>
     </div>
 </div>
-<form action="{{ url('admin/Application/store')}}" method="post" name="add_application">
-    {{csrf_field()}}
+<form action="<?php echo e(url('admin/Application/store')); ?>" method="post" name="add_application">
+    <?php echo e(csrf_field()); ?>
+
     <ul class="nav nav-tabs" id="myTab2" role="tablist">
         <li class="nav-item"><a class="nav-link active" id="active-screen-tab" data-toggle="tab" href="#active-screen" role="tab" aria-controls="active-screen" aria-selected="true">Add Application Dates</a></li>
         <li class="nav-item"><a class="nav-link" id="active1-screen-tab" data-toggle="tab" href="#active1-screen" role="tab" aria-controls="active1-screen" aria-selected="true">Active Screen</a></li>
@@ -38,29 +40,31 @@
                             <label for="">Application Name</label>
                             <div class=""><input type="text" class="form-control" name="application_name" value="">
                             </div>
-                            @if($errors->first('application_name'))
+                            <?php if($errors->first('application_name')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('application_name')}}
+                                    <?php echo e($errors->first('application_name')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
-                    @foreach($languages as $lang)
-                        @if($lang->default != 'Y')
+                    <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lang): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php if($lang->default != 'Y'): ?>
                             <div class="col-12 col-sm-12">
                                 <div class="form-group">
-                                    <label for="">Application Name <span class="font-16 text-info"><strong>[{{$lang->language}}]</strong></span></label>
-                                    <div class=""><input type="text" class="form-control" name="application_name_{{$lang->language_code}}" value="{{old('application_name_'.$lang->language_code)}}">
+                                    <label for="">Application Name <span class="font-16 text-info"><strong>[<?php echo e($lang->language); ?>]</strong></span></label>
+                                    <div class=""><input type="text" class="form-control" name="application_name_<?php echo e($lang->language_code); ?>" value="<?php echo e(old('application_name_'.$lang->language_code)); ?>">
                                     </div>
-                                    @if($errors->first('application_name_'.$lang->language_code))
+                                    <?php if($errors->first('application_name_'.$lang->language_code)): ?>
                                         <div class="mb-1 text-danger">
-                                            {{ $errors->first('application_name_'.$lang->language_code)}}
+                                            <?php echo e($errors->first('application_name_'.$lang->language_code)); ?>
+
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                        @endif
-                    @endforeach
+                        <?php endif; ?>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
                     <div class="col-12 col-sm-6">
                         <div class="form-group">
@@ -68,17 +72,18 @@
                             <div class="">
                                 <select class="form-control custom-select" name="form_id" id="form_id">
                                     <option value="">Select</option>
-                                    @forelse($forms as $key=>$form)
-                                        <option value="{{$form->id}}" {{old('form_id')==$form->id?'selected':''}}>{{$form->name}}</option>
-                                    @empty
-                                    @endforelse
+                                    <?php $__empty_1 = true; $__currentLoopData = $forms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key=>$form): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <option value="<?php echo e($form->id); ?>" <?php echo e(old('form_id')==$form->id?'selected':''); ?>><?php echo e($form->name); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                    <?php endif; ?>
                                 </select>
                             </div>
-                            @if($errors->first('form_id'))
+                            <?php if($errors->first('form_id')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('form_id')}}
+                                    <?php echo e($errors->first('form_id')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
@@ -87,44 +92,47 @@
                             <div class="">
                                 <select class="form-control custom-select" name="enrollment_id" id="enrollment_id">
                                     <option value="">Select</option>
-                                    @forelse($enrollments as $key=>$enrollment)
-                                        <option value="{{$enrollment->id}}" {{old('enrollment_id')==$enrollment->id?'selected':''}}>{{$enrollment->school_year}}</option>
-                                    @empty
-                                    @endforelse
+                                    <?php $__empty_1 = true; $__currentLoopData = $enrollments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key=>$enrollment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <option value="<?php echo e($enrollment->id); ?>" <?php echo e(old('enrollment_id')==$enrollment->id?'selected':''); ?>><?php echo e($enrollment->school_year); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                    <?php endif; ?>
                                 </select>
                             </div>
-                            @if($errors->first('enrollment_id'))
+                            <?php if($errors->first('enrollment_id')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('enrollment_id')}}
+                                    <?php echo e($errors->first('enrollment_id')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
                         <div class="form-group">
                             <label for="">Starting Date [For Parent]</label>
                             <div class="input-append date form_datetime">
-                                <input class="form-control datetimepicker" name="starting_date" id="starting_date"  value="{{old('starting_date')}}" disabled=""  data-date-format="mm/dd/yyyy hh:ii" {{-- readonly="readonly" --}}>
+                                <input class="form-control datetimepicker" name="starting_date" id="starting_date"  value="<?php echo e(old('starting_date')); ?>" disabled=""  data-date-format="mm/dd/yyyy hh:ii" >
 
                             </div>
-                            @if($errors->first('starting_date'))
+                            <?php if($errors->first('starting_date')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('starting_date')}}
+                                    <?php echo e($errors->first('starting_date')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
                         <div class="form-group">
                             <label for="">Ending Date [For Parent]</label>
                             <div class="">
-                                <input class="form-control datetimepicker" name="ending_date" id="ending_date" value="{{old('ending_date')}}" disabled=""  data-date-format="mm/dd/yyyy hh:ii">
+                                <input class="form-control datetimepicker" name="ending_date" id="ending_date" value="<?php echo e(old('ending_date')); ?>" disabled=""  data-date-format="mm/dd/yyyy hh:ii">
                             </div>
-                            @if($errors->first('ending_date'))
+                            <?php if($errors->first('ending_date')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('ending_date')}}
+                                    <?php echo e($errors->first('ending_date')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -132,27 +140,29 @@
                         <div class="form-group">
                             <label for="">Starting Date [For Admin]</label>
                             <div class="input-append date form_datetime">
-                                <input class="form-control datetimepicker" name="admin_starting_date" id="admin_starting_date"  value="{{old('admin_starting_date')}}" disabled=""  data-date-format="mm/dd/yyyy hh:ii" {{-- readonly="readonly" --}}>
+                                <input class="form-control datetimepicker" name="admin_starting_date" id="admin_starting_date"  value="<?php echo e(old('admin_starting_date')); ?>" disabled=""  data-date-format="mm/dd/yyyy hh:ii" >
 
                             </div>
-                            @if($errors->first('admin_starting_date'))
+                            <?php if($errors->first('admin_starting_date')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('admin_starting_date')}}
+                                    <?php echo e($errors->first('admin_starting_date')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
                         <div class="form-group">
                             <label for="">Ending Date [For Admin]</label>
                             <div class="">
-                                <input class="form-control datetimepicker" name="admin_ending_date" id="admin_ending_date" value="{{old('admin_ending_date')}}" disabled=""  data-date-format="mm/dd/yyyy hh:ii">
+                                <input class="form-control datetimepicker" name="admin_ending_date" id="admin_ending_date" value="<?php echo e(old('admin_ending_date')); ?>" disabled=""  data-date-format="mm/dd/yyyy hh:ii">
                             </div>
-                            @if($errors->first('admin_ending_date'))
+                            <?php if($errors->first('admin_ending_date')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('admin_ending_date')}}
+                                    <?php echo e($errors->first('admin_ending_date')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -161,13 +171,14 @@
                         <div class="form-group">
                             <label for="">Recommendation Due Date</label>
                             <div class="">
-                                <input class="form-control datetimepicker" name="recommendation_due_date" id="recommendation_due_date" disabled value="{{old('recommendation_due_date')}}"  data-date-format="mm/dd/yyyy hh:ii">
+                                <input class="form-control datetimepicker" name="recommendation_due_date" id="recommendation_due_date" disabled value="<?php echo e(old('recommendation_due_date')); ?>"  data-date-format="mm/dd/yyyy hh:ii">
                             </div>
-                            @if($errors->first('recommendation_due_date'))
+                            <?php if($errors->first('recommendation_due_date')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('recommendation_due_date')}}
+                                    <?php echo e($errors->first('recommendation_due_date')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -175,13 +186,14 @@
                         <div class="form-group">
                             <label for="">Writing Prompt Due Date</label>
                             <div class="">
-                                <input class="form-control datetimepicker" name="writing_prompt_due_date" id="writing_prompt_due_date" disabled value="{{old('writing_prompt_due_date')}}"  data-date-format="mm/dd/yyyy hh:ii">
+                                <input class="form-control datetimepicker" name="writing_prompt_due_date" id="writing_prompt_due_date" disabled value="<?php echo e(old('writing_prompt_due_date')); ?>"  data-date-format="mm/dd/yyyy hh:ii">
                             </div>
-                            @if($errors->first('writing_prompt_due_date'))
+                            <?php if($errors->first('writing_prompt_due_date')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('writing_prompt_due_date')}}
+                                    <?php echo e($errors->first('writing_prompt_due_date')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -189,20 +201,21 @@
                         <div class="form-group">
                             <label for="">Transcript Due Date</label>
                             <div class="">
-                                <input class="form-control datetimepicker" name="transcript_due_date" id="transcript_due_date" disabled value="{{old('transcript_due_date')}}"  data-date-format="mm/dd/yyyy hh:ii">
+                                <input class="form-control datetimepicker" name="transcript_due_date" id="transcript_due_date" disabled value="<?php echo e(old('transcript_due_date')); ?>"  data-date-format="mm/dd/yyyy hh:ii">
                             </div>
-                            @if($errors->first('transcript_due_date'))
+                            <?php if($errors->first('transcript_due_date')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('transcript_due_date')}}
+                                    <?php echo e($errors->first('transcript_due_date')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
                         <div class="form-group">
                             <label for="">Magnet URL</label>
                             <div class="">
-                                <input class="form-control" name="magnet_url" value="{{$application_url}}">
+                                <input class="form-control" name="magnet_url" value="<?php echo e($application_url); ?>">
                             </div>
                         </div>
                     </div>
@@ -226,11 +239,12 @@
                                     <option value="Late">Late Submission</option>
                                 </select>
                             </div>
-                            @if($errors->first('submission_type'))
+                            <?php if($errors->first('submission_type')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('submission_type')}}
+                                    <?php echo e($errors->first('submission_type')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
@@ -242,11 +256,12 @@
                                     <option value="No">No</option>
                                 </select>
                             </div>
-                            @if($errors->first('recommendation_email_to_parent'))
+                            <?php if($errors->first('recommendation_email_to_parent')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('recommendation_email_to_parent')}}
+                                    <?php echo e($errors->first('recommendation_email_to_parent')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-12 col-sm-6">
@@ -258,11 +273,12 @@
                                     <option value="later">At End of Application Period</option>
                                 </select>
                             </div>
-                            @if($errors->first('fetch_grades_cdi'))
+                            <?php if($errors->first('fetch_grades_cdi')): ?>
                                 <div class="mb-1 text-danger">
-                                    {{ $errors->first('fetch_grades_cdi')}}
+                                    <?php echo e($errors->first('fetch_grades_cdi')); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -272,33 +288,34 @@
                         <div class="card-body">
                             <div class="form-group" id="available_programs">
                                 <span class="err_msg">Please select Parent Submission Form</span>
-                                @forelse($temp_programs as $key=>$program)
-                                    @forelse($program['grade_info'] as $key=>$grade)
-                                        <div class="formid_{{$program['parent_submission_form']}}">
+                                <?php $__empty_1 = true; $__currentLoopData = $temp_programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key=>$program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                    <?php $__empty_2 = true; $__currentLoopData = $program['grade_info']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key=>$grade): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_2 = false; ?>
+                                        <div class="formid_<?php echo e($program['parent_submission_form']); ?>">
                                             <div class="custom-control custom-checkbox custom-control-inline">
-                                                <input type="checkbox" id="{{$grade['id']}}{{$program['id']}}" name="program_grade_id[]" class="custom-control-input" value="{{$program['id']}},{{$grade['id']}}" {{-- {{is_array(old('program_grade_id')) && in_array($program['id'].",".$grade['id'], old('program_grade_id'))?'checked':''}} --}} checked>
-                                                <label class="custom-control-label" for="{{$grade['id']}}{{$program['id']}}">{{$program['name']}} - {{$grade['name']}}</label>
+                                                <input type="checkbox" id="<?php echo e($grade['id']); ?><?php echo e($program['id']); ?>" name="program_grade_id[]" class="custom-control-input" value="<?php echo e($program['id']); ?>,<?php echo e($grade['id']); ?>"  checked>
+                                                <label class="custom-control-label" for="<?php echo e($grade['id']); ?><?php echo e($program['id']); ?>"><?php echo e($program['name']); ?> - <?php echo e($grade['name']); ?></label>
                                             </div>
                                         </div>
-                                    @empty
-                                    @endforelse
-                                @empty
-                                @endforelse
-                                @if($errors->first('program_grade_id'))
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_2): ?>
+                                    <?php endif; ?>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                <?php endif; ?>
+                                <?php if($errors->first('program_grade_id')): ?>
                                     <div class="mb-1 text-danger">
-                                        {{ $errors->first('program_grade_id')}}
+                                        <?php echo e($errors->first('program_grade_id')); ?>
+
                                     </div>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         <div class="tab-pane fade" id="active1-screen" role="tabpanel" aria-labelledby="active1-screen-tab">
-            @foreach($languages as $lang)
-                <input type="hidden" name="active_screen_languages[]" value="{{$lang->language_code}}">
+            <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lang): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <input type="hidden" name="active_screen_languages[]" value="<?php echo e($lang->language_code); ?>">
                 <div class="form-group pb-0 mb-0 pt-20">
-                    <label class="control-label font-20 text-info"><strong><u>{{$lang->language}}</u></strong></label>
+                    <label class="control-label font-20 text-info"><strong><u><?php echo e($lang->language); ?></u></strong></label>
                 </div>
                 <div class="form-group">
                     <label>Active Screen Title : </label>
@@ -315,20 +332,20 @@
                 <div class="form-group">
                     <label>Active Screen : </label>
                     <div class="editor-height-210">
-                        <textarea class="form-control editor" id="editor00_{{$lang->language}}" name="active_screen[]">
+                        <textarea class="form-control editor" id="editor00_<?php echo e($lang->language); ?>" name="active_screen[]">
                             <p>Please print this page and/or record this confirmation number for your records. If you provided an email address, you will receive an email confirmation at the email address provided.</p>
 
                             <p>Please direct all questions about the Transfer Jefferson Application to the Office of Magnet Program at chasitie@theleanleap.com or by calling 256-606-4066 between the hours of 8:30 am and 4:00 pm Monday through Friday.</p>
                         </textarea>
                     </div>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
         <div class="tab-pane fade" id="active-email" role="tabpanel" aria-labelledby="active-email-tab">
-            @foreach($languages as $lang)
-                <input type="hidden" name="active_email_languages[]" value="{{$lang->language_code}}">
+            <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lang): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <input type="hidden" name="active_email_languages[]" value="<?php echo e($lang->language_code); ?>">
                 <div class="form-group pb-0 mb-0 pt-20">
-                    <label class="control-label font-20 text-info"><strong><u>{{$lang->language}}</u></strong></label>
+                    <label class="control-label font-20 text-info"><strong><u><?php echo e($lang->language); ?></u></strong></label>
                 </div>
                 <div class="form-group">
                     <label>Email Subject : </label>
@@ -339,7 +356,7 @@
                 <div class="form-group">
                     <label>Active Email : </label>
                     <div class="editor-height-210">
-                        <textarea class="form-control editor" id="editor01_{{$lang->language_code}}" name="active_email[]">
+                        <textarea class="form-control editor" id="editor01_<?php echo e($lang->language_code); ?>" name="active_email[]">
                             <p>Dear {parent_name},</p>
 
                             <p>Your application confirmation number is {confirm_number} for {student_name}.</p>
@@ -354,18 +371,18 @@
                         </textarea>
                     </div>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
         <div class="tab-pane fade" id="active1-email" role="tabpanel" aria-labelledby="active1-email-tab">
-            @foreach($languages as $lang)
-                <input type="hidden" name="pending_screen_languages[]" value="{{$lang->language_code}}">
+            <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lang): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <input type="hidden" name="pending_screen_languages[]" value="<?php echo e($lang->language_code); ?>">
                 <div class="form-group pb-0 mb-0 pt-20">
-                    <label class="control-label font-20 text-info"><strong><u>{{$lang->language}}</u></strong></label>
+                    <label class="control-label font-20 text-info"><strong><u><?php echo e($lang->language); ?></u></strong></label>
                 </div>
                 <div class="form-group">
                     <label>Pending Screen : </label>
                     <div class="editor-height-210">
-                        <textarea class="form-control editor" id="editor02_{{$lang->language_code}}" name="pending_screen[]">
+                        <textarea class="form-control editor" id="editor02_<?php echo e($lang->language_code); ?>" name="pending_screen[]">
                             <p>In order to complete the application process, you must submit a copy of your student's grades and discipline records by {transcript_due_date}. These records should be emailed to magnet@hsv-k12.org. Please include your confirmation number in your email.</p>
 
                             <p>Please print this page and/or record this confirmation number for your records. If you provided an email address, you will receive an email confirmation at the email address provided. &nbsp;</p>
@@ -376,13 +393,13 @@
                         </textarea>
                     </div>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
         <div class="tab-pane fade" id="active2-email" role="tabpanel" aria-labelledby="active2-email-tab">
-            @foreach($languages as $lang)
-                <input type="hidden" name="pending_email_languages[]" value="{{$lang->language_code}}">
+            <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lang): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <input type="hidden" name="pending_email_languages[]" value="<?php echo e($lang->language_code); ?>">
                 <div class="form-group pb-0 mb-0 pt-20">
-                    <label class="control-label font-20 text-info"><strong><u>{{$lang->language}}</u></strong></label>
+                    <label class="control-label font-20 text-info"><strong><u><?php echo e($lang->language); ?></u></strong></label>
                 </div>
                 <div class="form-group">
                     <label>Email Subject : </label>
@@ -393,7 +410,7 @@
                 <div class="form-group">
                     <label>Pending Email : </label>
                     <div class="editor-height-210">
-                        <textarea class="form-control editor" id="editor03_{{$lang->language_code}}" name="pending_email[]">
+                        <textarea class="form-control editor" id="editor03_<?php echo e($lang->language_code); ?>" name="pending_email[]">
                             <p>Dear {parent_name},<br />
                             <br />
                             Your application confirmation number is {confirm_number} for {student_name}.</p>
@@ -408,7 +425,7 @@
                         </textarea>
                     </div>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
 
@@ -416,14 +433,14 @@
 
 
         <div class="tab-pane fade" id="cdi-grade-upload" role="tabpanel" aria-labelledby="cdi-grade-upload-tab">
-            @foreach($languages as $lang)
+            <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lang): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="form-group pb-0 mb-0 pt-20">
-                    <label class="control-label font-20 text-info"><strong><u>{{$lang->language}}</u></strong></label>
+                    <label class="control-label font-20 text-info"><strong><u><?php echo e($lang->language); ?></u></strong></label>
                 </div>
             <div class="form-group">
                 <label>CDI Grade Upload Screen Text : </label>
                 <div class="editor-height-210">
-                    <textarea class="form-control editor" id="grade_cdi_welcome_text_{{$lang->language_code}}" name="grade_cdi_welcome_text[]">
+                    <textarea class="form-control editor" id="grade_cdi_welcome_text_<?php echo e($lang->language_code); ?>" name="grade_cdi_welcome_text[]">
                         <div class="text-center font-20 b-600 mb-10" style="text-align: center;"><span style="font-size:20px;">Grades and CDI Upload</span></div>
 
                         <div>
@@ -444,18 +461,18 @@
                     </textarea>
                 </div>
             </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
         <div class="tab-pane fade" id="cdi-grade-confirm" role="tabpanel" aria-labelledby="cdi-grade-confirm-tab">
-            @foreach($languages as $lang)
+            <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lang): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="form-group pb-0 mb-0 pt-20">
-                    <label class="control-label font-20 text-info"><strong><u>{{$lang->language}}</u></strong></label>
+                    <label class="control-label font-20 text-info"><strong><u><?php echo e($lang->language); ?></u></strong></label>
                 </div>
             <div class="form-group">
                 <label>CDI Grade Upload Confirm Screen Text : </label>
                 <div class="editor-height-210">
-                    <textarea class="form-control editor" id="grade_cdi_confirm_text_{{$lang->language_code}}" name="grade_cdi_confirm_text[]">
+                    <textarea class="form-control editor" id="grade_cdi_confirm_text_<?php echo e($lang->language_code); ?>" name="grade_cdi_confirm_text[]">
                         <main>
                             <div class="container">
                                 <div class="mt-20">
@@ -470,7 +487,7 @@
                     </textarea>
                 </div>
             </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
         <div class="box content-header-floating" id="listFoot">
@@ -479,343 +496,17 @@
                     <input type="hidden" name="submit-from" id="submit-from-btn" value="general">
                     <button type="submit" class="btn btn-warning btn-xs" name="submit" value="Save" title="Save"><i class="fa fa-save"></i> Save </button>
                    <button type="submit" name="save_exit" value="save_exit" class="btn btn-success btn-xs submit" title="Save & Exit"><i class="fa fa-save"></i> Save &amp; Exit</button>
-                   <a class="btn btn-danger btn-xs" href="{{url('/admin/Application')}}" title="Cancel"><i class="fa fa-times"></i> Cancel</a>
+                   <a class="btn btn-danger btn-xs" href="<?php echo e(url('/admin/Application')); ?>" title="Cancel"><i class="fa fa-times"></i> Cancel</a>
                 </div>
             </div>
         </div>
     </div>
 </form>
-@endsection
-@section('scripts')
-<script type="text/javascript" src="{{url('/')}}/resources/assets/admin/plugins/laravel-ckeditor/ckeditor.js"></script>
-<script type="text/javascript" src="{{url('/resources/assets/admin/plugins/laravel-ckeditor/adapters/jquery.js')}}"></script>
-{{-- <script type="text/javascript">
-    CKEDITOR.replace('editor00',{
-        toolbar : 'Basic',
-        toolbarGroups: [
-                { name: 'document',    groups: [ 'mode', 'document' ] },            // Displays document group with its two subgroups.
-                { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },           // Group's name will be used to create voice label.
-                { name: 'basicstyles', groups: [ 'cleanup', 'basicstyles'] },
-            
-                '/',                                                                // Line break - next group will be placed in new line.
-                { name: 'links' }
-            ],
-            on: {
-            pluginsLoaded: function() {
-                var editor = this,
-                    config = editor.config;
-                
-                editor.ui.addRichCombo( 'my-combo', {
-                    label: 'Insert Short Code',
-                    title: 'Insert Short Code',
-                    toolbar: 'basicstyles',
-            
-                    panel: {               
-                        css: [ CKEDITOR.skin.getPath( 'editor' ) ].concat( config.contentsCss ),
-                        multiSelect: false,
-                        attributes: { 'aria-label': 'Insert Short Code' }
-                    },
-        
-                    init: function() {   
-                        var chk = []; 
-                        $.ajax({
-                            url:'{{url('/admin/shortCode/list')}}',
-                            type:"get",
-                            async: false,
-                            success:function(response){
-                                chk = response;
-                            }
-                        }) 
-                        for(var i=0;i<chk.length;i++){
-                            this.add( chk[i], chk[i] );
-                        }
-                    },
-        
-                    onClick: function( value ) {
-                        editor.focus();
-                        editor.fire( 'saveSnapshot' );
-                       
-                        editor.insertHtml( value );
-                    
-                        editor.fire( 'saveSnapshot' );
-                    }
-                } );        
-            }        
-        }
-    });
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('scripts'); ?>
+<script type="text/javascript" src="<?php echo e(url('/')); ?>/resources/assets/admin/plugins/laravel-ckeditor/ckeditor.js"></script>
+<script type="text/javascript" src="<?php echo e(url('/resources/assets/admin/plugins/laravel-ckeditor/adapters/jquery.js')); ?>"></script>
 
-    CKEDITOR.replace('editor01',{
-        toolbar : 'Basic',
-        toolbarGroups: [
-                { name: 'document',    groups: [ 'mode', 'document' ] },            // Displays document group with its two subgroups.
-                { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },           // Group's name will be used to create voice label.
-                { name: 'basicstyles', groups: [ 'cleanup', 'basicstyles'] },
-            
-                '/',                                                                // Line break - next group will be placed in new line.
-                { name: 'links' }
-            ],
-            on: {
-            pluginsLoaded: function() {
-                var editor = this,
-                    config = editor.config;
-                
-                editor.ui.addRichCombo( 'my-combo', {
-                    label: 'Insert Short Code',
-                    title: 'Insert Short Code',
-                    toolbar: 'basicstyles',
-            
-                    panel: {               
-                        css: [ CKEDITOR.skin.getPath( 'editor' ) ].concat( config.contentsCss ),
-                        multiSelect: false,
-                        attributes: { 'aria-label': 'Insert Short Code' }
-                    },
-        
-                    init: function() {   
-                        var chk = []; 
-                        $.ajax({
-                            url:'{{url('/admin/shortCode/list')}}',
-                            type:"get",
-                            async: false,
-                            success:function(response){
-                                chk = response;
-                            }
-                        }) 
-                        for(var i=0;i<chk.length;i++){
-                            this.add( chk[i], chk[i] );
-                        }
-                    },
-        
-                    onClick: function( value ) {
-                        editor.focus();
-                        editor.fire( 'saveSnapshot' );
-                       
-                        editor.insertHtml( value );
-                    
-                        editor.fire( 'saveSnapshot' );
-                    }
-                } );        
-            }        
-        }
-    });
-
-    CKEDITOR.replace('editor02',{
-        toolbar : 'Basic',
-        toolbarGroups: [
-                { name: 'document',    groups: [ 'mode', 'document' ] },            // Displays document group with its two subgroups.
-                { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },           // Group's name will be used to create voice label.
-                { name: 'basicstyles', groups: [ 'cleanup', 'basicstyles'] },
-            
-                '/',                                                                // Line break - next group will be placed in new line.
-                { name: 'links' }
-            ],
-            on: {
-            pluginsLoaded: function() {
-                var editor = this,
-                    config = editor.config;
-                
-                editor.ui.addRichCombo( 'my-combo', {
-                    label: 'Insert Short Code',
-                    title: 'Insert Short Code',
-                    toolbar: 'basicstyles',
-            
-                    panel: {               
-                        css: [ CKEDITOR.skin.getPath( 'editor' ) ].concat( config.contentsCss ),
-                        multiSelect: false,
-                        attributes: { 'aria-label': 'Insert Short Code' }
-                    },
-        
-                    init: function() {   
-                        var chk = []; 
-                        $.ajax({
-                            url:'{{url('/admin/shortCode/list')}}',
-                            type:"get",
-                            async: false,
-                            success:function(response){
-                                chk = response;
-                            }
-                        }) 
-                        for(var i=0;i<chk.length;i++){
-                            this.add( chk[i], chk[i] );
-                        }
-                    },
-        
-                    onClick: function( value ) {
-                        editor.focus();
-                        editor.fire( 'saveSnapshot' );
-                       
-                        editor.insertHtml( value );
-                    
-                        editor.fire( 'saveSnapshot' );
-                    }
-                } );        
-            }        
-        }
-    });
-
-    CKEDITOR.replace('editor03',{
-        toolbar : 'Basic',
-        toolbarGroups: [
-                { name: 'document',    groups: [ 'mode', 'document' ] },            // Displays document group with its two subgroups.
-                { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },           // Group's name will be used to create voice label.
-                { name: 'basicstyles', groups: [ 'cleanup', 'basicstyles'] },
-            
-                '/',                                                                // Line break - next group will be placed in new line.
-                { name: 'links' }
-            ],
-            on: {
-            pluginsLoaded: function() {
-                var editor = this,
-                    config = editor.config;
-                
-                editor.ui.addRichCombo( 'my-combo', {
-                    label: 'Insert Short Code',
-                    title: 'Insert Short Code',
-                    toolbar: 'basicstyles',
-            
-                    panel: {               
-                        css: [ CKEDITOR.skin.getPath( 'editor' ) ].concat( config.contentsCss ),
-                        multiSelect: false,
-                        attributes: { 'aria-label': 'Insert Short Code' }
-                    },
-        
-                    init: function() {   
-                        var chk = []; 
-                        $.ajax({
-                            url:'{{url('/admin/shortCode/list')}}',
-                            type:"get",
-                            async: false,
-                            success:function(response){
-                                chk = response;
-                            }
-                        }) 
-                        for(var i=0;i<chk.length;i++){
-                            this.add( chk[i], chk[i] );
-                        }
-                    },
-        
-                    onClick: function( value ) {
-                        editor.focus();
-                        editor.fire( 'saveSnapshot' );
-                       
-                        editor.insertHtml( value );
-                    
-                        editor.fire( 'saveSnapshot' );
-                    }
-                } );        
-            }        
-        }
-    });
-
-
-    CKEDITOR.replace('grade_cdi_welcome_text',{
-        toolbar : 'Basic',
-        toolbarGroups: [
-                { name: 'document',    groups: [ 'mode', 'document' ] },            // Displays document group with its two subgroups.
-                { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },           // Group's name will be used to create voice label.
-                { name: 'basicstyles', groups: [ 'cleanup', 'basicstyles'] },
-            
-                '/',                                                                // Line break - next group will be placed in new line.
-                { name: 'links' }
-            ],
-            on: {
-            pluginsLoaded: function() {
-                var editor = this,
-                    config = editor.config;
-                
-                editor.ui.addRichCombo( 'my-combo', {
-                    label: 'Insert Short Code',
-                    title: 'Insert Short Code',
-                    toolbar: 'basicstyles',
-            
-                    panel: {               
-                        css: [ CKEDITOR.skin.getPath( 'editor' ) ].concat( config.contentsCss ),
-                        multiSelect: false,
-                        attributes: { 'aria-label': 'Insert Short Code' }
-                    },
-        
-                    init: function() {   
-                        var chk = []; 
-                        $.ajax({
-                            url:'{{url('/admin/shortCode/list')}}',
-                            type:"get",
-                            async: false,
-                            success:function(response){
-                                chk = response;
-                            }
-                        }) 
-                        for(var i=0;i<chk.length;i++){
-                            this.add( chk[i], chk[i] );
-                        }
-                    },
-        
-                    onClick: function( value ) {
-                        editor.focus();
-                        editor.fire( 'saveSnapshot' );
-                       
-                        editor.insertHtml( value );
-                    
-                        editor.fire( 'saveSnapshot' );
-                    }
-                } );        
-            }        
-        }
-    });
-
-    
-    CKEDITOR.replace('grade_cdi_confirm_text',{
-        toolbar : 'Basic',
-        toolbarGroups: [
-                { name: 'document',    groups: [ 'mode', 'document' ] },            // Displays document group with its two subgroups.
-                { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },           // Group's name will be used to create voice label.
-                { name: 'basicstyles', groups: [ 'cleanup', 'basicstyles'] },
-            
-                '/',                                                                // Line break - next group will be placed in new line.
-                { name: 'links' }
-            ],
-            on: {
-            pluginsLoaded: function() {
-                var editor = this,
-                    config = editor.config;
-                
-                editor.ui.addRichCombo( 'my-combo', {
-                    label: 'Insert Short Code',
-                    title: 'Insert Short Code',
-                    toolbar: 'basicstyles',
-            
-                    panel: {               
-                        css: [ CKEDITOR.skin.getPath( 'editor' ) ].concat( config.contentsCss ),
-                        multiSelect: false,
-                        attributes: { 'aria-label': 'Insert Short Code' }
-                    },
-        
-                    init: function() {   
-                        var chk = []; 
-                        $.ajax({
-                            url:'{{url('/admin/shortCode/list')}}',
-                            type:"get",
-                            async: false,
-                            success:function(response){
-                                chk = response;
-                            }
-                        }) 
-                        for(var i=0;i<chk.length;i++){
-                            this.add( chk[i], chk[i] );
-                        }
-                    },
-        
-                    onClick: function( value ) {
-                        editor.focus();
-                        editor.fire( 'saveSnapshot' );
-                       
-                        editor.insertHtml( value );
-                    
-                        editor.fire( 'saveSnapshot' );
-                    }
-                } );        
-            }        
-        }
-    });
-</script> --}}
 <script>
     var start_date;
     var end_date;
@@ -850,7 +541,7 @@
                         init: function() {   
                             var chk = []; 
                             $.ajax({
-                                url:'{{url('/admin/shortCode/list')}}',
+                                url:'<?php echo e(url('/admin/shortCode/list')); ?>',
                                 type:"get",
                                 async: false,
                                 success:function(response){
@@ -885,7 +576,7 @@
     {
         $.ajax({
             type: "get",
-            url: '{{url('admin/Application/start_end_date')}}',
+            url: '<?php echo e(url('admin/Application/start_end_date')); ?>',
             data: {
                 id:$(select).val(),
             },
@@ -1061,4 +752,5 @@
         }
     }
   </script> 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.admin.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\vipuljadav\www\projects\laravel\MagnetHCS\app/Modules/Application/Views/create.blade.php ENDPATH**/ ?>

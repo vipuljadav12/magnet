@@ -795,6 +795,10 @@
                     id:$(select).val(),
                 },
                 success: function(response) {
+                    if (response.error) {
+                        console.error('Error:', response.error);
+                        return;
+                    }
                     setStartEndDate(response.start,response.end);
                     start_date=response.start;
                     end_date=response.end;
@@ -848,6 +852,10 @@
                         autoclose: true,
                         dateFormat: 'mm/dd/yyyy hh:ii',
                     }).removeAttr('disabled');
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', status, error);
+                    console.error('Response:', xhr.responseText);
                 }
             });
         }

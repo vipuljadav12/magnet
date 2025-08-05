@@ -2,7 +2,7 @@
     icons: 'purple',
     lang: ['en'],
     init: function( editor ) {
-    	console.log('entered');
+    	// console.log('entered');
 
     	editor.addCommand( 'insertPurple', {
 		    exec: function( editor ) {

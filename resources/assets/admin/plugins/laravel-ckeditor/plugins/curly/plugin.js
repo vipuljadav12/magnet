@@ -2,7 +2,6 @@
     icons: 'curly',
     lang: ['en'],
     init: function( editor ) {
-    	console.log('entered');
 
     	editor.addCommand( 'insertCurly', {
 		    exec: function( editor ) {
