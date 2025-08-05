@@ -1,6 +1,6 @@
 @extends("layouts.admin.app")
 @section("title")
-    Import Racial Composition Data | {{config('APP_NAME',env("APP_NAME"))}}
+    Import Racial Composition Data | {{config('app.name', 'LeanFrogMagnet')}}
 @endsection
 @section('styles')
     <style type="text/css">

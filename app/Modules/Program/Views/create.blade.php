@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Add Program  | {{config('APP_NAME',env("APP_NAME"))}}  @endsection
+@section('title')Add Program  | {{config('app.name', 'LeanFrogMagnet')}}  @endsection
 @section('styles')
     <script type="text/javascript">var BASE_URL = '{{url('/')}}';</script>
     <style>
@@ -391,8 +391,8 @@
     </form>
 @endsection
 @section('scripts')
-    <script src="{{asset('resources/assets/common/js/jquery.validate.min.js')}}"></script>
-    <script src="{{asset('resources/assets/common/js/additional-methods.min.js')}}"></script>
+    <script src="{{asset('resources/assets/admin/js/jquery.validate.min.js')}}"></script>
+    <script src="{{asset('resources/assets/admin/js/additional-methods.min.js')}}"></script>
     <script type="text/javascript" src="{{asset('resources/assets/admin/plugins/jquery-ui/jquery-ui.min.js')}}"></script>
      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/3.5.2/select2.min.js"></script>
 

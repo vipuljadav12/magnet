@@ -1,6 +1,6 @@
 @extends("layouts.admin.app")
 @section("title")
-    Import Availability | {{config('APP_NAME',env("APP_NAME"))}}
+    Import Availability | {{config('app.name', 'LeanFrogMagnet')}}
 @endsection
 @section('styles')
     <style type="text/css">

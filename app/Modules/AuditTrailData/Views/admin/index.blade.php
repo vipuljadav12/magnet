@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 @section('title')
-		 Audit Trails | {{config('APP_NAME',env("APP_NAME"))}} 
+		 Audit Trails | {{config('app.name', 'LeanFrogMagnet')}} 
 @endsection
 @section('styles')
     <!-- DataTables -->

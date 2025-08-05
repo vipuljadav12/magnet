@@ -1,6 +1,6 @@
 @extends("layouts.admin.app")
 @section("title")
-	Set Availability | {{config('APP_NAME',env("APP_NAME"))}}
+	Set Availability | {{config('app.name', 'LeanFrogMagnet')}}
 @endsection
 @section("content")
 <div class="content-wrapper-in">
