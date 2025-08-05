@@ -1,5 +1,5 @@
 
-<?php $__env->startSection('title'); ?>Waitlist Process Selection | <?php echo e(config('app.name', 'LeanFrogMagnet'))); ?> <?php $__env->stopSection(); ?>
+<?php $__env->startSection('title'); ?>Waitlist Process Selection | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?> <?php $__env->stopSection(); ?>
 <?php $__env->startSection('content'); ?>
     <div class="card shadow">
         <div class="card-body d-flex align-items-center justify-content-between flex-wrap">

@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Configuration | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
+@section('title')Configuration | {{config('app.name', 'LeanFrogMagnet')}} @endsection
 @section('styles')
     <!-- DataTables -->
     <link href="{{asset('resources/assets/admin/plugins/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" />

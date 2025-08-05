@@ -1,6 +1,6 @@
 
 <?php $__env->startSection('title'); ?>
-    Edit Application Dates | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?>
+    Edit Application Dates | <?php echo e(config('app.name', 'LeanFrogMagnet'); ?>
 
 <?php $__env->stopSection(); ?>
 

@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Program Max Percent Swing | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
+@section('title')Program Max Percent Swing | {{config('app.name', 'LeanFrogMagnet')}} @endsection
 @section('content')
     @include("layouts.admin.common.alerts")
     <div class="card shadow">

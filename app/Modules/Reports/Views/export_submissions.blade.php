@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title') Export Submissions Data | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
+@section('title') Export Submissions Data | {{config('app.name', 'LeanFrogMagnet')}} @endsection
 
 @section('styles')
 <style type="text/css">

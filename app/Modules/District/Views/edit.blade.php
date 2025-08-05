@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Edit District | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
+@section('title')Edit District | {{config('app.name', 'LeanFrogMagnet')}} @endsection
 @section('styles')
 <style type="text/css">
     .loader

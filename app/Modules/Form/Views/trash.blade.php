@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 @section('title')
-	Trash Form | {{config('app.name', 'LeanFrogMagnet'))}}
+	Trash Form | {{config('app.name', 'LeanFrogMagnet')}}
 @endsection
 @section('content')	
 	<div class="card shadow">

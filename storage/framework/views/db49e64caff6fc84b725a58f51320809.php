@@ -1,5 +1,5 @@
 
-<?php $__env->startSection('title'); ?>Edit Communication | <?php echo e(config('app.name', 'LeanFrogMagnet'))); ?> <?php $__env->stopSection(); ?>
+<?php $__env->startSection('title'); ?>Edit Communication | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?> <?php $__env->stopSection(); ?>
 <?php $__env->startSection('styles'); ?>
     
 <?php $__env->stopSection(); ?>

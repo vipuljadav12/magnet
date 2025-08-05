@@ -1,4 +1,4 @@
-<?php $__env->startSection('title'); ?> Export Submissions Data | <?php echo e(config('app.name', 'LeanFrogMagnet'))); ?> <?php $__env->stopSection(); ?>
+<?php $__env->startSection('title'); ?> Export Submissions Data | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?> <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('styles'); ?>
 <style type="text/css">

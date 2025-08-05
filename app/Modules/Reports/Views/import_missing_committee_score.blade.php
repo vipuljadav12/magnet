@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 @section('title')
-    Import Missing Committee Score | {{config('app.name', 'LeanFrogMagnet'))}}
+    Import Missing Committee Score | {{config('app.name', 'LeanFrogMagnet')}}
 @endsection
 
 @section('styles')

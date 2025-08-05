@@ -1,4 +1,4 @@
-<?php $__env->startSection('title'); ?>Preliminary Selection | <?php echo e(config('app.name', 'LeanFrogMagnet'))); ?> <?php $__env->stopSection(); ?>
+<?php $__env->startSection('title'); ?>Preliminary Selection | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?> <?php $__env->stopSection(); ?>
 <?php $__env->startSection('content'); ?>
 <style type="text/css">
     .font-18{font-size: 18px !important;}

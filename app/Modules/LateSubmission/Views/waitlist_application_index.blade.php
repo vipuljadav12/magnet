@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Late Submission Edit Communcation | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
+@section('title')Late Submission Edit Communcation | {{config('app.name', 'LeanFrogMagnet')}} @endsection
 @section('content')
     <div class="card shadow">
         <div class="card-body d-flex align-items-center justify-content-between flex-wrap">

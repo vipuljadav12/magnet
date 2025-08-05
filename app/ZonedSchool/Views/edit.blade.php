@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title')Edit Zone Address | {{config('app.name', 'LeanFrogMagnet'))}} @endsection
+@section('title')Edit Zone Address | {{config('app.name', 'LeanFrogMagnet')}} @endsection
 @section('content')
 
 <style type="text/css">
