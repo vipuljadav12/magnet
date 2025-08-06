@@ -156,7 +156,7 @@
                             <li><a title="Eligibility Master" href="{{url('/admin/Eligibility')}}"><span>Eligibility Master</span></a></li>
                             <li><a title="School Master" href="{{url('/admin/School')}}"><span>School Master</span></a></li>
                             <li><a title="Priority Master" href="{{url('/admin/Priority')}}"><span>Priority Master</span></a></li>
-                            <li><a title="Process Selection" href="javascript:void(0)"><span>Run Admin Selection</span> <span class="menu-arrow"></span></a>
+                            <li><a title="Process Selection" href="{{url('/admin/Reports')}}"><span>Run Admin Selection</span> <span class="menu-arrow"></span></a>
                                     <ul class="nav-second-level" aria-expanded="false">
                                         <li class="pl-20"><a title="Regular Submissions" href="{{url('/admin/Reports')}}"><span>Regular</span></a></li>
                                         <li class="pl-20"><a title="Waitlist Submissions" href="{{url('/admin/Waitlist/Admin/Selection')}}"><span>Waitlist</span></a></li>

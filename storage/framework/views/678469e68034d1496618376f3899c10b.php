@@ -1,17 +1,17 @@
-@extends('layouts.admin.app')
-@section('title') Trash School @endsection
-@section('content')
+
+<?php $__env->startSection('title'); ?> Trash School <?php $__env->stopSection(); ?>
+<?php $__env->startSection('content'); ?>
 <div class="card shadow">
     <div class="card-body d-flex align-items-center justify-content-between flex-wrap">
         <div class="page-title mt-5 mb-5">Trash School </div>
         <div class="">
-            <a href="{{url('admin/School')}}" class="btn btn-sm btn-danger" title="">Back</a>
+            <a href="<?php echo e(url('admin/School')); ?>" class="btn btn-sm btn-danger" title="">Back</a>
 
         </div>
     </div>
 </div>
 <div class="card shadow">
- @include("layouts.admin.common.alerts")
+ <?php echo $__env->make("layouts.admin.common.alerts", array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
  <div class="card-body">
     <div class="table-responsive">
         <table id="datatable" class="table table-bordered">
@@ -26,37 +26,37 @@
                 </tr>
             </thead>
             <tbody>
-               @if(isset($schools))
-               @foreach($schools as $key=>$school)
+               <?php if(isset($schools)): ?>
+               <?php $__currentLoopData = $schools; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key=>$school): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                <tr>
-                <td class="">{{$school->name}}</td>
-                <td class="">{{$school->grade}}</td>
-                <td class="">{{$school->magnet}}</td>
-                <td class="">{{$school->zoning_api_name}}</td>
-                <td class="">{{$school->sis_name}}</td>
+                <td class=""><?php echo e($school->name); ?></td>
+                <td class=""><?php echo e($school->grade); ?></td>
+                <td class=""><?php echo e($school->magnet); ?></td>
+                <td class=""><?php echo e($school->zoning_api_name); ?></td>
+                <td class=""><?php echo e($school->sis_name); ?></td>
 
                 <td class="text-center">
 
-                    <a href="{{url('admin/School/restore',$school->id)}}" class="font-18 ml-5 mr-5" title="Restore"><i class="fas fa-undo"></i>
+                    <a href="<?php echo e(url('admin/School/restore',$school->id)); ?>" class="font-18 ml-5 mr-5" title="Restore"><i class="fas fa-undo"></i>
                     </a>
                 </td>
             </tr>
-            @endforeach
-            @endif
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>
 </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 <!-- InstanceEndEditable -->
-@section('scripts')
+<?php $__env->startSection('scripts'); ?>
 
-<script src="{{asset('resources/assets/admin/js/jquery.validate.min.js')}}"></script>
-<script src="{{asset('resources/assets/admin/js/additional-methods.min.js')}}"></script>
+<script src="<?php echo e(asset('resources/assets/admin/js/jquery.validate.min.js')); ?>"></script>
+<script src="<?php echo e(asset('resources/assets/admin/js/additional-methods.min.js')); ?>"></script>
 <!-- Sweet Alert -->
-<script src="{{url('/resources/assets/admin/plugins/sweet-alert2/sweetalert2.min.js')}}"></script>
-{{-- <script src="{{url('/resources/assets/admin/plugins/sweet-alert2/jquery.sweet-alert.init.js')}}"></script> --}}
+<script src="<?php echo e(url('/resources/assets/admin/plugins/sweet-alert2/sweetalert2.min.js')); ?>"></script>
+
 </script>
 <script type="text/javascript">
     $(document).ready(function(){
@@ -79,7 +79,7 @@
         var status=$(this).prop('checked')==true ? 'Y' : 'N' ;
         $.ajax({
             type: "get",
-            url: '{{url('admin/School/changestatus')}}',
+            url: '<?php echo e(url('admin/School/changestatus')); ?>',
             data: {
                 id:$(this).attr('id'),
                 status:status
@@ -90,4 +90,5 @@
         });
     });    
 </script> 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.admin.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\vipuljadav\www\projects\laravel\MagnetHCS\app/Modules/School/Views/trash.blade.php ENDPATH**/ ?>

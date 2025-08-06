@@ -9,10 +9,10 @@
         }
     </style>
     <!-- DataTables -->
-    <link href="{{asset('resources/assets/admin/plugins/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" />
-    <link href="{{asset('resources/assets/admin/plugins/datatables/buttons.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{url('resources/assets/admin/plugins/DataTables/DataTables-1.10.21/css/dataTables.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{url('resources/assets/admin/plugins/DataTables/Buttons-1.6.2/css/buttons.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" />
     <!-- Responsive datatable examples -->
-    <link href="{{asset('resources/assets/admin/plugins/datatables/responsive.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{url('resources/assets/admin/plugins/DataTables/Responsive-2.2.5/css/responsive.bootstrap4.min.css')}}" rel="stylesheet" type="text/css" />
 @stop
 
 @section('content')

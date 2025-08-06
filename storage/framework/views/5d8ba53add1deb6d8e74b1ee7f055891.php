@@ -156,7 +156,7 @@
                             <li><a title="Eligibility Master" href="<?php echo e(url('/admin/Eligibility')); ?>"><span>Eligibility Master</span></a></li>
                             <li><a title="School Master" href="<?php echo e(url('/admin/School')); ?>"><span>School Master</span></a></li>
                             <li><a title="Priority Master" href="<?php echo e(url('/admin/Priority')); ?>"><span>Priority Master</span></a></li>
-                            <li><a title="Process Selection" href="javascript:void(0)"><span>Run Admin Selection</span> <span class="menu-arrow"></span></a>
+                            <li><a title="Process Selection" href="<?php echo e(url('/admin/Reports')); ?>"><span>Run Admin Selection</span> <span class="menu-arrow"></span></a>
                                     <ul class="nav-second-level" aria-expanded="false">
                                         <li class="pl-20"><a title="Regular Submissions" href="<?php echo e(url('/admin/Reports')); ?>"><span>Regular</span></a></li>
                                         <li class="pl-20"><a title="Waitlist Submissions" href="<?php echo e(url('/admin/Waitlist/Admin/Selection')); ?>"><span>Waitlist</span></a></li>
