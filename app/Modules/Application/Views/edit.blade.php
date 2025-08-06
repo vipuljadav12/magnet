@@ -194,9 +194,9 @@
                                         value="{{ $application->recommendation_due_date != '' ? date('m/d/Y H:i', strtotime($application->recommendation_due_date)) : '' }}"
                                         data-date-format="mm/dd/yyyy hh:ii">
                                 </div>
-                                @if ($errors->first('ending_date'))
+                                @if ($errors->first('recommendation_due_date'))
                                     <div class="mb-1 text-danger">
-                                        {{ $errors->first('ending_date') }}
+                                        {{ $errors->first('recommendation_due_date') }}
                                     </div>
                                 @endif
                             </div>
