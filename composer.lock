@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3101209b471aed6e14c5fdf4d3b5c89c",
+    "content-hash": "48fb8c4cd220f15c54ea116c16452985",
     "packages": [
         {
             "name": "artem-schander/l5-modular",
