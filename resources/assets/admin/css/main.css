@@ -14777,7 +14777,8 @@ main {
   @media screen and (min-width: 1200px) {
     .content-wrapper {
       padding: 20px;
-      margin-left: 260px; } }
+      /* margin-left: 260px; */
+     } }
   .content-wrapper .card-body {
     padding: 15px; }
 
@@ -29642,7 +29643,8 @@ footer {
     left: 0; }
   @media screen and (min-width: 1200px) {
     footer {
-      margin-left: 260px; } }
+      /* margin-left: 260px; */
+     } }
   footer .footer-box {
     text-align: center; }
 

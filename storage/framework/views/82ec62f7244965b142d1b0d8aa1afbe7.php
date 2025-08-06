@@ -1,6 +1,6 @@
 
 <?php $__env->startSection('title'); ?>
-    Edit Application Dates | <?php echo e(config('app.name', 'LeanFrogMagnet'); ?>
+    Edit Application Dates | <?php echo e(config('app.name', 'LeanFrogMagnet')); ?>
 
 <?php $__env->stopSection(); ?>
 
@@ -205,9 +205,9 @@
                                         value="<?php echo e($application->recommendation_due_date != '' ? date('m/d/Y H:i', strtotime($application->recommendation_due_date)) : ''); ?>"
                                         data-date-format="mm/dd/yyyy hh:ii">
                                 </div>
-                                <?php if($errors->first('ending_date')): ?>
+                                <?php if($errors->first('recommendation_due_date')): ?>
                                     <div class="mb-1 text-danger">
-                                        <?php echo e($errors->first('ending_date')); ?>
+                                        <?php echo e($errors->first('recommendation_due_date')); ?>
 
                                     </div>
                                 <?php endif; ?>
