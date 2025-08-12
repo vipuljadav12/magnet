@@ -3,11 +3,9 @@
 namespace App\Modules\Submissions\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Auth;
-use Session;
-use App\Modules\Form\Models\Form;
 use App\Modules\Program\Models\Program;
-use DB;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class Submissions extends Model {
 
